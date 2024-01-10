@@ -10,7 +10,7 @@
 //#define DEBUG_EXTRA_INFO
 #define DECODE_DISTANCE_WIDTH
 #define RAW_BUFFER_LENGTH  					750  // MagiQuest requires 112 bytes.
-#define MAX_IR_CODE							64
+#define MAX_IR_CODE							10
 #define NO_LED_FEEDBACK_CODE
 // Define for IR Protocol
 typedef uint32_t IRRawDataType;
@@ -189,6 +189,8 @@ typedef struct
 //
 #define C_ON (1)
 #define C_OFF (0)
+#define LOW		(0)
+#define HIGH	(1)
 #define sbi(str,bit) (str |= (1<<bit)) // set bit in register
 #define cbi(str,bit) (str &= ~(1<<bit)) // clear bit in register
 #define tbi(str,bit) (str ^= (1<<bit)) // toggle bit in register
@@ -232,6 +234,8 @@ typedef struct
 #define TIME_500MS_BY_100MS (5)
 #define TIME_300MS_BY_100MS (3)
 #define TIME_200MS_BY_100MS (2)
+
+#define TIME_20MS_BY_10MS	(2)
 
 
 #define TIME_2S_BY_10MS  (200)
@@ -292,6 +296,8 @@ typedef struct
 #define TIME_ALARM_PADDING      (10)  // seconds
 
 #define KEY_RESET   (1)
+#define KEY_SWITCH_1	(1)
+#define KEY_SWITCH_2	(2)
 
 #define STEP_MOTOR_LOOP_TIME  (3) // millisecond per step - Change for speed of step motor
 #define NUMBER_OF_STEPS (740)                    // number of sterp
@@ -367,8 +373,107 @@ typedef struct{
 
 typedef struct
 {
+	uint16_t ulStatus;
 	uint16_t uwID;
 	IRData IRData;
 } IRData_t;
+/***************************************************************************/
+/*					   			DEFINE FOR RTC							   */
+/***************************************************************************/
+typedef struct
+{
+    uint8_t second; // 0-59
+    uint8_t minute; // 0-59
+    uint8_t hour;   // 0-59
+    uint8_t day;    // 1-31
+    uint8_t month;  // 1-12
+    uint16_t year;  // 1970-2038
+	uint16_t milliseconds;
+	uint8_t dayOfWeek;
+} date_time_t;
+/***************************************************************************/
+/*					   	   DEFINE FOR SETTING IR						   */
+/***************************************************************************/
+#define CREATE_COMMAND  'c'
+#define DELETE_COMMAND  'd'
 
+enum
+{
+    NONE,
+    MOTION__TRIGGER,
+    ONE_TRIGGER,
+    WINDOW_TRIGGER
+};
+
+enum
+{
+    TIMEOUT_DISABLE,
+    TIMEOUT_ENABLE
+};
+
+enum
+{
+    IR_CODE_DISABLE,
+    IR_CODE_ENABLE
+};
+
+typedef struct
+{
+    uint8_t ubHour;
+    uint8_t ubMin;
+} HourMin_t;
+
+typedef struct
+{
+    uint8_t ubMode;
+    uint8_t uwTrigID;
+    uint8_t uwIrCode;
+    uint8_t ubDays;
+    HourMin_t tTime1;
+    HourMin_t tTime2;
+} IrDataTrigger_t;
+
+typedef struct
+{
+    uint8_t ubStatus;
+    uint8_t uwTrigID;
+    uint8_t uwIrCode;
+    uint8_t ubDays;
+    uint32_t ulTimeout;
+} IrDataTimeout_t;
+
+typedef enum
+{
+    COMMAND_INDEX = 0,
+    TRIGGER_ID_INDEX,
+    IR_CODE_INDEX,
+    DAYS_INDEX,
+    TIME1_INDEX,
+    TIME2_INDEX
+} SchedulingIrTrig_t;
+
+typedef enum
+{
+    TIMEOUT_COMMAND_INDEX = 0,
+    TIMEOUT_TRIGGER_ID_INDEX,
+    TIMEOUT_IR_CODE_INDEX,
+    TIMEOUT_DAYS,
+    TIMEOUT_INDEX,
+} TimeOutIr_t;
+/***************************************************************************/
+/*					   		DEFIEN FOR ERROR CODE						   */
+/***************************************************************************/
+enum
+{
+	NO_ERROR,
+	TIMEOUT_COMMAND_INVALID,
+	TIMEOUT_TRIGGER_ID_INVALID,
+	TIMEOUT_TRIGGER_IR_INVALID,
+	TIMEOUT_DAYS_INVALID,
+	TIMEOUT_INDEX_INVALID
+
+};
+/***************************************************************************/
+/*					   			END OF DEFINE							   */
+/***************************************************************************/
 #endif // _OP_HEADER_DEFINE_H_

@@ -9,8 +9,8 @@
 
 #include "hw_tests.h"
 
-#define SCHED_MAX_EVENT_DATA_SIZE   MAX(sizeof(nrf_drv_gpiote_pin_t), APP_TIMER_SCHED_EVENT_DATA_SIZE)
-#define SCHED_QUEUE_SIZE            10
+#define SCHED_MAX_EVENT_DATA_SIZE   16
+#define SCHED_QUEUE_SIZE            16
 
 void ProcessMain(void);
 void TimerAndScherInit(void);
@@ -27,6 +27,9 @@ int main(void)
     TimerAndScherInit();
     Mid_IrRemoteInit();
     SystimerInit();
+    Mid_RTCInit();
+    Mid_FlashInit();
+    Mid_KeyControlInit();
 
     NRF_LOG_INFO("/*--- APP START ---*/");
     for (;;)
@@ -55,7 +58,13 @@ void ProcessMain(void)
 }
 void SysTimer10msCall(void * p_context)
 {
-
+	static uint8_t ubCount20ms = CLEAR;
+	if(ubCount20ms >= TIME_20MS_BY_10MS)
+	{
+		app_sched_event_put(NULL, 0, Mid_KeyHandler);
+		ubCount20ms = CLEAR;
+	}
+	ubCount20ms++;
 }
 void SysTimer100msCall(void * p_context)
 {
@@ -92,7 +101,7 @@ void SysTimer100msCall(void * p_context)
 }
 void SysTimer1000msCall(void * p_context)
 {
-
+	app_sched_event_put(NULL, sizeof(NULL), Mid_RTCHandle);
 }
 
 void TimerAndScherInit(void)

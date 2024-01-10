@@ -1,0 +1,3 @@
+GNU_INSTALL_ROOT ?= build/arm-gnu-toolchain-12.2.mpacbti-rel1-darwin-x86_64-arm-none-eabi/bin/
+GNU_VERSION ?= 12.2
+GNU_PREFIX ?= arm-none-eabi

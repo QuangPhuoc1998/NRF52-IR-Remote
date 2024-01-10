@@ -41,5 +41,31 @@
 #include "nrfx_saadc.h"
 
 #include "nrf_delay.h"
+#include "nrf_fstorage.h"
+
+#include "nrf_sdh.h"
+#include "nrf_sdh_ble.h"
+#include "nrf_fstorage_sd.h"
+
+#define ERASE_SIZE	(4096) // byte
+
+#define START_ADDRESS_FSTORAGE	(0x2b000)
+#define END_ADDRESS_FSTORAGE	(0x2f000)
+#define FSTORAGE_SIZE			(END_ADDRESS_FSTORAGE - START_ADDRESS_FSTORAGE)
+
+#define SIZE_OF_IR_DATA_TYPE           (sizeof(IRData_t))
+#define SIZE_OF_IR_DATA_VAR            (sizeof(t_IRDataCommom))
+#define SIZE_OF_IR_TRIG_TYPE           (sizeof(IrDataTrigger_t))
+#define SIZE_OF_IR_TRIG_VAR            (sizeof(g_atIRDataTrigger))
+#define SIZE_OF_IR_TIMEOUT_TYPE        (sizeof(IrDataTimeout_t))
+#define SIZE_OF_IR_TIMEOUT_VAR         (sizeof(g_atIRTimeOut))
+
+#define IR_DATA_START_ADDRESS       START_ADDRESS_FSTORAGE
+#define IR_TRIG_START_ADDRESS       (IR_DATA_START_ADDRESS + ERASE_SIZE)
+#define IR_TIMEOUT_START_ADDRESS    (IR_TRIG_START_ADDRESS + ERASE_SIZE)
+
+#define CONVERT_IR_DATA_TO_ADDRESS(Var)      (IR_DATA_START_ADDRESS+(SIZE_OF_IR_DATA_TYPE * Var))
+#define CONVERT_IR_TRIG_TO_ADDRESS(Var)      (IR_TRIG_START_ADDRESS+(SIZE_OF_IR_TRIG_TYPE * Var))
+#define CONVERT_IR_TIMEOUT_TO_ADDRESS(Var)   (IR_TIMEOUT_START_ADDRESS+(SIZE_OF_IR_TIMEOUT_TYPE * Var))
 
 #endif // _MAIN_H_

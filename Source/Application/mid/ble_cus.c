@@ -15,47 +15,43 @@ static void on_write(ble_cus_t * p_cus, ble_evt_t const * p_ble_evt)
 
     if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_RTC_SET_INDEX])
     {
-//    	print_debug_message("*--- RTC set command ---*/", 0, 0, 1);
-//    	print_debug_message("Data len: ", p_evt_write->len, 1, 1);
-//    	// 4 byte
-//    	pData = (uint8_t*)malloc(64 * sizeof(uint8_t));
-//
-////    	int32_t ulUnixTimeStamp = (int32_t)(p_evt_write->data[0] << 0) |  (int32_t)(p_evt_write->data[1] << 8) | (int32_t)(p_evt_write->data[2] << 16) | (int32_t)(p_evt_write->data[3] << 24);
-//
-//    	snprintf(pData, 64, "Raw data: 0x%X-0x%X-0x%X-0x%X", p_evt_write->data[0], p_evt_write->data[1], p_evt_write->data[2], p_evt_write->data[3]);
-//    	print_debug_message(pData, 0, 0, 1);
-////		snprintf(pData, 64, "Data:%lu", ulUnixTimeStamp);
-////		print_debug_message(pData, 0, 0, 1);
+    	NRF_LOG_INFO("*--- RTC set command ---*/");
+		NRF_LOG_INFO("Data len: %d", p_evt_write->len);
+		Mid_DecodeCommand(CUS_UUID_RTC_SET_INDEX, (uint8_t *)p_evt_write->data, p_evt_write->len);
+
     }
     else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_MOT_SENS_INDEX])
     {
-//    	print_debug_message("*--- Motion sens command ---*/", 0, 0, 1);
-//    	print_debug_message("Data len: ", p_evt_write->len, 1, 1);
-//
-//    	pData = (uint8_t*)malloc(64 * sizeof(uint8_t));
-//
-//    	snprintf(pData, 64, "Raw data: 0x%X-0x%X-0x%X-0x%X", p_evt_write->data[0], p_evt_write->data[1], p_evt_write->data[2], p_evt_write->data[3]);
-//    	print_debug_message(pData, 0, 0, 1);
+    	NRF_LOG_INFO("*--- Motion sens command ---*/");
+    	NRF_LOG_INFO("Data len: %d", p_evt_write->len);
+
+    	for(uint8_t i = 0 ; i < p_evt_write->len ; i++)
+    	{
+    		NRF_LOG_INFO("0x%X - %c", p_evt_write->data[i], p_evt_write->data[i]);
+    	}
+    	Mid_DecodeCommand(CUS_UUID_MOT_SENS_INDEX, (uint8_t *)p_evt_write->data, p_evt_write->len);
     }
     else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_MOT_TOUT_INDEX])
 	{
-//    	print_debug_message("*--- Motion timeout command ---*/", 0, 0, 1);
-//    	print_debug_message("Data len: ", p_evt_write->len, 1, 1);
-//
-//    	pData = (uint8_t*)malloc(64 * sizeof(uint8_t));
-//
-//    	snprintf(pData, 64, "Raw data: 0x%X-0x%X-0x%X-0x%X", p_evt_write->data[0], p_evt_write->data[1], p_evt_write->data[2], p_evt_write->data[3]);
-//    	print_debug_message(pData, 0, 0, 1);
+    	NRF_LOG_INFO("*--- Motion timeout command ---*/");
+    	NRF_LOG_INFO("Data len: %d", p_evt_write->len);
+
+    	for(uint8_t i = 0 ; i < p_evt_write->len ; i++)
+    	{
+    		NRF_LOG_INFO("0x%X - %c", p_evt_write->data[i], p_evt_write->data[i]);
+    	}
+    	Mid_DecodeCommand(CUS_UUID_MOT_TOUT_INDEX, (uint8_t *)p_evt_write->data, p_evt_write->len);
 	}
     else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_SCHEDULE_INDEX])
 	{
-//    	print_debug_message("*--- Schedule command ---*/", 0, 0, 1);
-//    	print_debug_message("Data len: ", p_evt_write->len, 1, 1);
-//
-//    	pData = (uint8_t*)malloc(64 * sizeof(uint8_t));
-//    	snprintf(pData, 64, "Data: %s", p_evt_write->data);
-//
-//    	print_debug_message(pData, 0, 0, 1);
+    	NRF_LOG_INFO("*--- Schedule command ---*/");
+    	NRF_LOG_INFO("Data len: %d", p_evt_write->len);
+
+    	for(uint8_t i = 0 ; i < p_evt_write->len ; i++)
+    	{
+    		NRF_LOG_INFO("0x%X - %c", p_evt_write->data[i], p_evt_write->data[i]);
+    	}
+    	Mid_DecodeCommand(CUS_UUID_SCHEDULE_INDEX, (uint8_t *)p_evt_write->data, p_evt_write->len);
 	}
 //    else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_BATT_VOL_INDEX])
 //	{
@@ -64,12 +60,17 @@ static void on_write(ble_cus_t * p_cus, ble_evt_t const * p_ble_evt)
     else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_IR_LEARN_INDEX])
 	{
     	NRF_LOG_INFO("*--- IR learn command ---*/");
+    	NRF_LOG_INFO("Len: %d",p_evt_write->len);
+    	NRF_LOG_INFO("Raw: 0x%X 0x%X",p_evt_write->data[0], p_evt_write->data[1]);
     	NRF_LOG_INFO("ID: %d",ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
     	App_ControlStartLearnIR(ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
 	}
     else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_IR_EMMIT_INDEX])
 	{
     	NRF_LOG_INFO("/*--- IR emmit command ---*/");
+
+    	NRF_LOG_INFO("Len: %d",p_evt_write->len);
+    	NRF_LOG_INFO("Raw: 0x%X 0x%X",p_evt_write->data[0], p_evt_write->data[1]);
     	NRF_LOG_INFO("ID: %d",ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
     	App_ControlStartEmitIR(ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
 	}

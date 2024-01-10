@@ -38,5 +38,21 @@ HEADER_FLAG volatile USER_TBYTE	g_FubOperation1;
 #define APP_START_EMIT_IR_FLAG					g_FubOperation1.byte_bit.b5
 
 HEADER_FLAG USER_TBYTE	g_FubTimerCount1;
+/***************************************************************************/
+/*					   			FLAG FOR KEY							   */
+/***************************************************************************/
+HEADER_FLAG USER_TBYTE KeyFlag1;
+#define KEY_1CLICK_FLAG            	KeyFlag1.byte_bit.b0
+#define KEY_0_5SEC_CLICK_FLAG     	KeyFlag1.byte_bit.b1
+#define KEY_1SEC_CLICK_FLAG     	KeyFlag1.byte_bit.b2
+#define KEY_1_5SEC_CLICK_FLAG     	KeyFlag1.byte_bit.b3
+#define KEY_2SEC_CLICK_FLAG     	KeyFlag1.byte_bit.b4
+#define KEY_3SEC_CLICK_FLAG     	KeyFlag1.byte_bit.b5
+#define KEY_5SEC_CLICK_FLAG     	KeyFlag1.byte_bit.b6
+#define KEY_7SEC_CLICK_FLAG     	KeyFlag1.byte_bit.b7
 
+HEADER_FLAG USER_TBYTE KeyFlag2;
+#define KEY_RELEASE_CLICK_FLAG            KeyFlag2.byte_bit.b0
+#define ERROR_KEYSHORT_FLAG               KeyFlag2.byte_bit.b1
+#define KEY_PRESS_HOLD_FLAG               KeyFlag2.byte_bit.b2
 #endif // _OP_HEADER_FLAG_H_
