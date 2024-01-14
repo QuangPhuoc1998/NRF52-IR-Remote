@@ -4,13 +4,11 @@
 
 #include "Mid_IrRemote.h"
 #include "Mid_MotionSensor.h"
-#include "ir_transmitter.h"
-#include "ir_decoder.h"
 
 #include "hw_tests.h"
 
-#define SCHED_MAX_EVENT_DATA_SIZE   16
-#define SCHED_QUEUE_SIZE            16
+#define SCHED_MAX_EVENT_DATA_SIZE   24
+#define SCHED_QUEUE_SIZE            24
 
 void ProcessMain(void);
 void TimerAndScherInit(void);

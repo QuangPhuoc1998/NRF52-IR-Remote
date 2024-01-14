@@ -171,6 +171,8 @@ typedef struct
 #define SEND_STOP_BIT true
 #define SEND_NO_STOP_BIT false
 
+//#define USE_MSB_DECODING_FOR_DISTANCE_DECODER
+
 /*
  * Carrier frequencies for various protocols
  */
@@ -377,6 +379,60 @@ typedef struct
 	uint16_t uwID;
 	IRData IRData;
 } IRData_t;
+
+#if ! defined(IR_SEND_DUTY_CYCLE_PERCENT)
+#define IR_SEND_DUTY_CYCLE_PERCENT 30 // 30 saves power and is compatible to the old existing code
+#endif
+
+#if !defined(PULSE_CORRECTION_NANOS)
+#  if defined(F_CPU)
+// To change this value, you simply can add a line #define "PULSE_CORRECTION_NANOS <My_new_value>" in your ino file before the line "#include <IRremote.hpp>"
+#define PULSE_CORRECTION_NANOS (48000L / (F_CPU/MICROS_IN_ONE_SECOND)) // 3000 @16MHz, 666 @72MHz
+#  else
+#define PULSE_CORRECTION_NANOS 600
+#  endif
+#endif
+
+#if !defined(TOLERANCE_FOR_DECODERS_MARK_OR_SPACE_MATCHING)
+#define TOLERANCE_FOR_DECODERS_MARK_OR_SPACE_MATCHING    25 // Relative tolerance (in percent) for matchTicks(), matchMark() and matchSpace() functions used for protocol decoding.
+#endif
+
+#define UINT16_MAX_CUSTOM 65535
+
+/** Lower tolerance for comparison of measured data */
+//#define LTOL            (1.0 - (TOLERANCE/100.))
+#define LTOL            (100 - TOLERANCE_FOR_DECODERS_MARK_OR_SPACE_MATCHING)
+/** Upper tolerance for comparison of measured data */
+//#define UTOL            (1.0 + (TOLERANCE/100.))
+#define UTOL            (100 + TOLERANCE_FOR_DECODERS_MARK_OR_SPACE_MATCHING)
+
+//#define TICKS_LOW(us)   ((int)(((us)*LTOL/MICROS_PER_TICK)))
+//#define TICKS_HIGH(us)  ((int)(((us)*UTOL/MICROS_PER_TICK + 1)))
+#if MICROS_PER_TICK == 50 && TOLERANCE_FOR_DECODERS_MARK_OR_SPACE_MATCHING == 25           // Defaults
+#define TICKS_LOW(us)   ((us)/67 )     // (us) / ((MICROS_PER_TICK:50 / LTOL:75 ) * 100)
+#define TICKS_HIGH(us)  (((us)/40) + 1)  // (us) / ((MICROS_PER_TICK:50 / UTOL:125) * 100) + 1
+#else
+#define TICKS_LOW(us)   ((uint16_t ) ((long) (us) * LTOL / (MICROS_PER_TICK * 100) ))
+#define TICKS_HIGH(us)  ((uint16_t ) ((long) (us) * UTOL / (MICROS_PER_TICK * 100) + 1))
+#endif
+
+#define MARK_EXCESS_MICROS    20
+// ISR State-Machine : Receiver States
+#define IR_REC_STATE_IDLE      0 // Counting the gap time and waiting for the start bit to arrive
+#define IR_REC_STATE_MARK      1 // A mark was received and we are counting the duration of it.
+#define IR_REC_STATE_SPACE     2 // A space was received and we are counting the duration of it. If space is too long, we assume end of frame.
+#define IR_REC_STATE_STOP      3 // Stopped until set to IR_REC_STATE_IDLE which can only be done by resume()
+
+#define INPUT_MARK   0 ///< Sensor output for a mark ("flash")
+
+#define RECORD_GAP_MICROS   5000
+#define MICROS_PER_TICK    	50L
+#define RECORD_GAP_TICKS    (RECORD_GAP_MICROS / MICROS_PER_TICK) // 100
+
+#define MILLIS_IN_ONE_SECOND 1000L
+#define MICROS_IN_ONE_SECOND 1000000L
+#define MICROS_IN_ONE_MILLI 1000L
+
 /***************************************************************************/
 /*					   			DEFINE FOR RTC							   */
 /***************************************************************************/
@@ -402,17 +458,20 @@ enum
     NONE,
     MOTION__TRIGGER,
     ONE_TRIGGER,
-    WINDOW_TRIGGER
+    WINDOW_TRIGGER,
+	TIMEOUT_TRIGGER
 };
 
 enum
 {
-    TIMEOUT_DISABLE,
-    TIMEOUT_ENABLE
+	NONE_TYPE,
+	SCHEDULING_TYPE,
+	TIMEOUT_TYPE
 };
 
 enum
 {
+	IR_CODE_NONE,
     IR_CODE_DISABLE,
     IR_CODE_ENABLE
 };
@@ -431,16 +490,8 @@ typedef struct
     uint8_t ubDays;
     HourMin_t tTime1;
     HourMin_t tTime2;
-} IrDataTrigger_t;
-
-typedef struct
-{
-    uint8_t ubStatus;
-    uint8_t uwTrigID;
-    uint8_t uwIrCode;
-    uint8_t ubDays;
     uint32_t ulTimeout;
-} IrDataTimeout_t;
+} IrDataTrigger_t;
 
 typedef enum
 {
@@ -449,17 +500,10 @@ typedef enum
     IR_CODE_INDEX,
     DAYS_INDEX,
     TIME1_INDEX,
+	TIMEOUT_INDEX = TIME1_INDEX,
     TIME2_INDEX
 } SchedulingIrTrig_t;
 
-typedef enum
-{
-    TIMEOUT_COMMAND_INDEX = 0,
-    TIMEOUT_TRIGGER_ID_INDEX,
-    TIMEOUT_IR_CODE_INDEX,
-    TIMEOUT_DAYS,
-    TIMEOUT_INDEX,
-} TimeOutIr_t;
 /***************************************************************************/
 /*					   		DEFIEN FOR ERROR CODE						   */
 /***************************************************************************/
@@ -473,6 +517,87 @@ enum
 	TIMEOUT_INDEX_INVALID
 
 };
+/***************************************************************************/
+/*					   DEFIEN FOR KASEIKYO PROTOCOL						   */
+/***************************************************************************/
+#define KASEIKYO_VENDOR_ID_BITS     16
+#define KASEIKYO_VENDOR_ID_PARITY_BITS   4
+#define KASEIKYO_ADDRESS_BITS       12
+#define KASEIKYO_COMMAND_BITS       8
+#define KASEIKYO_PARITY_BITS        8
+#define KASEIKYO_BITS               (KASEIKYO_VENDOR_ID_BITS + KASEIKYO_VENDOR_ID_PARITY_BITS + KASEIKYO_ADDRESS_BITS + KASEIKYO_COMMAND_BITS + KASEIKYO_PARITY_BITS) // 48
+#define KASEIKYO_UNIT               432 // 16 pulses of 37 kHz (432,432432)  - Pronto 0x70 | 0x10
+
+#define KASEIKYO_HEADER_MARK        (8 * KASEIKYO_UNIT) // 3456
+#define KASEIKYO_HEADER_SPACE       (4 * KASEIKYO_UNIT) // 1728
+
+#define KASEIKYO_BIT_MARK           KASEIKYO_UNIT
+#define KASEIKYO_ONE_SPACE          (3 * KASEIKYO_UNIT) // 1296
+#define KASEIKYO_ZERO_SPACE         KASEIKYO_UNIT
+
+#define KASEIKYO_AVERAGE_DURATION   56000
+#define KASEIKYO_REPEAT_PERIOD      130000
+#define KASEIKYO_REPEAT_DISTANCE    (KASEIKYO_REPEAT_PERIOD - KASEIKYO_AVERAGE_DURATION) // 74 ms
+#define KASEIKYO_MAXIMUM_REPEAT_DISTANCE    (KASEIKYO_REPEAT_DISTANCE + (KASEIKYO_REPEAT_DISTANCE / 4)) // Just a guess
+
+#define PANASONIC_VENDOR_ID_CODE    0x2002
+#define DENON_VENDOR_ID_CODE        0x3254
+#define MITSUBISHI_VENDOR_ID_CODE   0xCB23
+#define SHARP_VENDOR_ID_CODE        0x5AAA
+#define JVC_VENDOR_ID_CODE          0x0103
+/***************************************************************************/
+/*					   DEFIEN FOR PULSE DISTANCE PROTOCOL				   */
+/***************************************************************************/
+#define DURATION_ARRAY_SIZE 50
+#if !defined(DISTANCE_WIDTH_MAXIMUM_REPEAT_DISTANCE_MICROS)
+#define DISTANCE_WIDTH_MAXIMUM_REPEAT_DISTANCE_MICROS       100000 // 100 ms, bit it is just a guess
+#endif
+/***************************************************************************/
+/*					   			DEFIEN FOR NEC				   			   */
+/***************************************************************************/
+#define NEC_ADDRESS_BITS        16 // 16 bit address or 8 bit address and 8 bit inverted address
+#define NEC_COMMAND_BITS        16 // Command and inverted command
+
+#define NEC_BITS                (NEC_ADDRESS_BITS + NEC_COMMAND_BITS)
+#define NEC_UNIT                560             // 21.28 periods of 38 kHz, 11.2 ticks TICKS_LOW = 8.358 TICKS_HIGH = 15.0
+
+#define NEC_HEADER_MARK         (16 * NEC_UNIT) // 9000 | 180
+#define NEC_HEADER_SPACE        (8 * NEC_UNIT)  // 4500 | 90
+
+#define NEC_BIT_MARK            NEC_UNIT
+#define NEC_ONE_SPACE           (3 * NEC_UNIT)  // 1690 | 33.8  TICKS_LOW = 25.07 TICKS_HIGH = 45.0
+#define NEC_ZERO_SPACE          NEC_UNIT
+
+#define NEC_REPEAT_HEADER_SPACE (4 * NEC_UNIT)  // 2250
+
+#define NEC_AVERAGE_DURATION    62000 // NEC_HEADER_MARK + NEC_HEADER_SPACE + 32 * 2,5 * NEC_UNIT + NEC_UNIT // 2.5 because we assume more zeros than ones
+#define NEC_MINIMAL_DURATION    49900 // NEC_HEADER_MARK + NEC_HEADER_SPACE + 32 * 2 * NEC_UNIT + NEC_UNIT // 2.5 because we assume more zeros than ones
+#define NEC_REPEAT_DURATION     (NEC_HEADER_MARK  + NEC_REPEAT_HEADER_SPACE + NEC_BIT_MARK) // 12 ms
+#define NEC_REPEAT_PERIOD       110000 // Commands are repeated every 110 ms (measured from start to start) for as long as the key on the remote control is held down.
+#define NEC_REPEAT_DISTANCE         (NEC_REPEAT_PERIOD - NEC_AVERAGE_DURATION) // 48 ms
+#define NEC_MAXIMUM_REPEAT_DISTANCE (NEC_REPEAT_PERIOD - NEC_MINIMAL_DURATION + 10000) // 70 ms
+
+#define APPLE_ADDRESS           0x87EE
+/***************************************************************************/
+/*					   		DEFIEN FOR DENON				   			   */
+/***************************************************************************/
+#define DENON_ADDRESS_BITS      5
+#define DENON_COMMAND_BITS      8
+#define DENON_FRAME_BITS        2 // 00/10 for 1. frame Denon/Sharp, inverted for autorepeat frame
+
+#define DENON_BITS              (DENON_ADDRESS_BITS + DENON_COMMAND_BITS + DENON_FRAME_BITS) // 15 - The number of bits in the command
+#define DENON_UNIT              260
+
+#define DENON_BIT_MARK          DENON_UNIT  // The length of a Bit:Mark
+#define DENON_ONE_SPACE         (7 * DENON_UNIT) // 1820 // The length of a Bit:Space for 1's
+#define DENON_ZERO_SPACE        (3 * DENON_UNIT) // 780 // The length of a Bit:Space for 0's
+
+#define DENON_AUTO_REPEAT_DISTANCE  45000 // Every frame is auto repeated with a space period of 45 ms and the command and frame inverted.
+#define DENON_REPEAT_PERIOD        110000 // Commands are repeated every 110 ms (measured from start to start) for as long as the key on the remote control is held down.
+
+// for old decoder
+#define DENON_HEADER_MARK       DENON_UNIT // The length of the Header:Mark
+#define DENON_HEADER_SPACE      (3 * DENON_UNIT) // 780 // The length of the Header:Space
 /***************************************************************************/
 /*					   			END OF DEFINE							   */
 /***************************************************************************/

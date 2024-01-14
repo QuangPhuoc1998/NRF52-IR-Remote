@@ -51,7 +51,7 @@ void Mid_RTCConvertUnixToDate(uint64_t ulUnix, date_time_t * pDate)
 		ulUnix = 0;
 	}
 	// Indochina time
-	ulUnix += 7 * 60 * 60;
+//	ulUnix += 7 * 60 * 60;
 	//Clear milliseconds
 	pDate->milliseconds = 0;
 

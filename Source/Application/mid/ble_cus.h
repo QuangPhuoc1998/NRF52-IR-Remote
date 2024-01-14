@@ -37,6 +37,7 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
 #define CUS_UUID_BATT_VOL    0x1529
 #define CUS_UUID_IR_LEARN    0x1532
 #define CUS_UUID_IR_EMMIT    0x1533
+#define CUS_UUID_IR_ERASE	 0x1534
 
 enum
 {
@@ -47,6 +48,7 @@ enum
 	CUS_UUID_BATT_VOL_INDEX,
 	CUS_UUID_IR_LEARN_INDEX,
 	CUS_UUID_IR_EMMIT_INDEX,
+	CUS_UUID_IR_ERASE_INDEX
 };
 
 

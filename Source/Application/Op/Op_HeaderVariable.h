@@ -39,9 +39,8 @@ HEADER_VARIABLE	uint64_t g_ullUnixTimeStamp;
 /***************************************************************************/
 HEADER_VARIABLE IrDataTrigger_t g_atIRDataTrigger[MAX_IR_CODE];
 HEADER_VARIABLE uint8_t g_ubIRTriggerCount;
+HEADER_VARIABLE uint8_t g_ubTriggerType;
 
-HEADER_VARIABLE IrDataTimeout_t g_atIRTimeOut[MAX_IR_CODE];
-HEADER_VARIABLE uint8_t g_ubIRTimeOutCount;
 /***************************************************************************/
 /*					   		VARIABLE FOR KEY							   */
 /***************************************************************************/

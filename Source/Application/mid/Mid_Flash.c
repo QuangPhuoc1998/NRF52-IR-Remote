@@ -1,10 +1,10 @@
 #include "main.h"
 
-//#define FLASH_SHOW_DEBUG
+#define FLASH_SHOW_DEBUG
 
 void print_flash_info(nrf_fstorage_t * p_fstorage);
 static void fstorage_evt_handler(nrf_fstorage_evt_t * p_evt);
-static uint32_t nrf5_flash_end_addr_get();
+uint32_t nrf5_flash_end_addr_get();
 void wait_for_flash_ready(nrf_fstorage_t const * p_fstorage);
 static void power_manage(void);
 
@@ -42,11 +42,25 @@ void Mid_FlashInit(void)
 //	}
 
 	Mid_FlashRead(t_IRDataCommom, IR_DATA_START_ADDRESS, SIZE_OF_IR_DATA_VAR);
+	nrf_delay_ms(100);
+	Mid_FlashRead(g_atIRDataTrigger, IR_TRIG_START_ADDRESS, SIZE_OF_IR_TRIG_VAR);
 #ifdef FLASH_SHOW_DEBUG
 	NRF_LOG_INFO("IR Code");
 	for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
 	{
 		NRF_LOG_INFO("IR %d : %d", t_IRDataCommom[i].uwID, t_IRDataCommom[i].ulStatus);
+	}
+	NRF_LOG_INFO("IR Trigger");
+	for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
+	{
+		NRF_LOG_INFO("ID %d: %d - %d - %d - 0x%X", i,
+										g_atIRDataTrigger[i].uwTrigID,
+										g_atIRDataTrigger[i].ubMode,
+										g_atIRDataTrigger[i].uwIrCode,
+										g_atIRDataTrigger[i].ubDays);
+		NRF_LOG_INFO("%d:%d - %d:%d - %d", g_atIRDataTrigger[i].tTime1.ubHour, g_atIRDataTrigger[i].tTime1.ubMin,
+											g_atIRDataTrigger[i].tTime2.ubHour, g_atIRDataTrigger[i].tTime2.ubMin,
+											g_atIRDataTrigger[i].ulTimeout);
 	}
 #endif //FLASH_SHOW_DEBUG
 }
@@ -62,6 +76,25 @@ bool Mid_FlashWrite(uint32_t ulAddress, void const * p_src, uint32_t ulLen)
 		NRF_LOG_INFO("nrf_fstorage_write() returned: %s", nrf_strerror_get(ret));
 		return false;
 	}
+	return true;
+}
+
+bool Mid_FlashWriteValue(uint32_t ulAddress, uint8_t ubValue, uint32_t ulLen)
+{
+	ret_code_t ret;
+	uint8_t * p_src;
+	p_src = (uint8_t *)malloc(128 * sizeof(uint8_t));
+	myMemSet(p_src, ubValue, 128);
+	ret = nrf_fstorage_write(&fstorage, ulAddress, p_src, ulLen, NULL);
+	APP_ERROR_CHECK(ret);
+	wait_for_flash_ready(&fstorage);
+	if (ret != NRF_SUCCESS)
+	{
+		NRF_LOG_INFO("nrf_fstorage_write() returned: %s", nrf_strerror_get(ret));
+		free(p_src);
+		return false;
+	}
+	free(p_src);
 	return true;
 }
 
@@ -96,6 +129,8 @@ bool Mid_FlashErase(uint32_t ulAddress, uint32_t ulLen)
     return true;
 }
 
+
+
 void print_flash_info(nrf_fstorage_t * p_fstorage)
 {
 #ifdef FLASH_SHOW_DEBUG
@@ -115,13 +150,6 @@ void print_flash_info(nrf_fstorage_t * p_fstorage)
     {
     	NRF_LOG_INFO("Address for IR Trig %d: 0x%X", i, CONVERT_IR_TRIG_TO_ADDRESS(i));
     }
-
-    NRF_LOG_INFO("IR Timeout - 0x%X - %d - %d", IR_TIMEOUT_START_ADDRESS, SIZE_OF_IR_TIMEOUT_TYPE, SIZE_OF_IR_TIMEOUT_VAR)
-    for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
-    {
-    	NRF_LOG_INFO("Address for IR Timeout %d: 0x%X", i, CONVERT_IR_TIMEOUT_TO_ADDRESS(i));
-    }
-
 #endif
 }
 
@@ -152,7 +180,7 @@ static void fstorage_evt_handler(nrf_fstorage_evt_t * p_evt)
     }
 }
 
-static uint32_t nrf5_flash_end_addr_get()
+uint32_t nrf5_flash_end_addr_get()
 {
     uint32_t const bootloader_addr = BOOTLOADER_ADDRESS;
     uint32_t const page_sz         = NRF_FICR->CODEPAGESIZE;

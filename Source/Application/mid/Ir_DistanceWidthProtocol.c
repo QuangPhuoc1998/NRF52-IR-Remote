@@ -1,4 +1,7 @@
-#include "Ir_DistanceWidthProtocol.h"
+#include "main.h"
+#include "Mid_IrRemote.h"
+
+#define DEBUG_DISTANCE
 
 /*
  * @return false if more than 2 distinct duration values found

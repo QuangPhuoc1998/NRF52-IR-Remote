@@ -6,6 +6,7 @@
 #include "Op_HeaderVariable.h"
 #include "Op_HeaderFunction.h"
 
+#include "LongUnion.h"
 #include "sdk_config.h"
 #include "nordic_common.h"
 #include "nrf.h"
@@ -57,15 +58,12 @@
 #define SIZE_OF_IR_DATA_VAR            (sizeof(t_IRDataCommom))
 #define SIZE_OF_IR_TRIG_TYPE           (sizeof(IrDataTrigger_t))
 #define SIZE_OF_IR_TRIG_VAR            (sizeof(g_atIRDataTrigger))
-#define SIZE_OF_IR_TIMEOUT_TYPE        (sizeof(IrDataTimeout_t))
-#define SIZE_OF_IR_TIMEOUT_VAR         (sizeof(g_atIRTimeOut))
+
 
 #define IR_DATA_START_ADDRESS       START_ADDRESS_FSTORAGE
 #define IR_TRIG_START_ADDRESS       (IR_DATA_START_ADDRESS + ERASE_SIZE)
-#define IR_TIMEOUT_START_ADDRESS    (IR_TRIG_START_ADDRESS + ERASE_SIZE)
 
 #define CONVERT_IR_DATA_TO_ADDRESS(Var)      (IR_DATA_START_ADDRESS+(SIZE_OF_IR_DATA_TYPE * Var))
 #define CONVERT_IR_TRIG_TO_ADDRESS(Var)      (IR_TRIG_START_ADDRESS+(SIZE_OF_IR_TRIG_TYPE * Var))
-#define CONVERT_IR_TIMEOUT_TO_ADDRESS(Var)   (IR_TIMEOUT_START_ADDRESS+(SIZE_OF_IR_TIMEOUT_TYPE * Var))
 
 #endif // _MAIN_H_

@@ -2,13 +2,11 @@
 
 #define SHOW_DEBUG_DECODE
 
+extern const char * c_ubProtocolName[PROCOTL_LEN];
+
 void Mid_DecodeInit(void)
 {
-    for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
-    {
-        g_atIRDataTrigger[i].ubMode = NONE;
-        g_atIRTimeOut[i].ubStatus = TIMEOUT_DISABLE;
-    }
+
 }
 
 void Mid_DecodeCommand(uint8_t ubCommandIndex, uint8_t * pData, uint8_t len)
@@ -26,11 +24,13 @@ void Mid_DecodeCommand(uint8_t ubCommandIndex, uint8_t * pData, uint8_t len)
     }
     case CUS_UUID_MOT_TOUT_INDEX:
     {
-    	app_sched_event_put(pData, len, Mid_DecodeTimeOut); // requirement 1.5
+    	g_ubTriggerType = TIMEOUT_TYPE;
+    	app_sched_event_put(pData, len, Mid_DecodeTimeBasedScheduling); // requirement 1.5
         break;
     }
     case CUS_UUID_SCHEDULE_INDEX:
     {
+    	g_ubTriggerType = SCHEDULING_TYPE;
     	app_sched_event_put(pData, len, Mid_DecodeTimeBasedScheduling); // requirement 1.3
         break;
     }
@@ -65,7 +65,14 @@ void Mid_DecodeTimeBasedScheduling(void *pData, uint16_t len)
         }
         else if(ubNumOfCompenent == 5)
         {
-            tIRDataTrigger.ubMode = ONE_TRIGGER;
+        	if(g_ubTriggerType == SCHEDULING_TYPE)
+        	{
+        		tIRDataTrigger.ubMode = ONE_TRIGGER;
+        	}
+        	else if(g_ubTriggerType == TIMEOUT_TYPE)
+        	{
+        		tIRDataTrigger.ubMode = TIMEOUT_TRIGGER;
+        	}
         }
         else if(ubNumOfCompenent == 3)
         {
@@ -73,9 +80,8 @@ void Mid_DecodeTimeBasedScheduling(void *pData, uint16_t len)
         }
         else
         {
-            return;
+        	// do nothing
         }
-
         if(ubCommand == CREATE_COMMAND)
         {
             Mid_InsertNewIRTrigger(&tIRDataTrigger);
@@ -87,46 +93,7 @@ void Mid_DecodeTimeBasedScheduling(void *pData, uint16_t len)
     }
     else
     {
-
-    }
-}
-
-void Mid_DecodeTimeOut(void * pData, uint16_t len)
-{
-    uint8_t ubCommand = 0;
-    IrDataTimeout_t tIRDataTimeout = {0};
-    uint8_t ubNumOfCompenent =  0;
-    uint8_t ubReturnValue = Mid_DecodeTimeOutDecode(&ubCommand, &tIRDataTimeout, &ubNumOfCompenent, pData, len);
-    if(ubReturnValue == NO_ERROR)
-    {
-        if(ubCommand == CREATE_COMMAND)
-        {
-            tIRDataTimeout.ubStatus = TIMEOUT_ENABLE;
-            Mid_InsertNewIRTimeOut(&tIRDataTimeout);
-#ifdef SHOW_DEBUG_DECODE
-            NRF_LOG_INFO("Command: %s", (ubCommand == CREATE_COMMAND) ? "Create" : "Delete");
-            NRF_LOG_INFO("Status: %d", tIRDataTimeout.ubStatus);
-            NRF_LOG_INFO("TrigID: %d", tIRDataTimeout.uwTrigID);
-            NRF_LOG_INFO("IrCode: %d", tIRDataTimeout.uwIrCode);
-            NRF_LOG_INFO("Days: %d", tIRDataTimeout.ubDays);
-            NRF_LOG_INFO("Timeout: %d", tIRDataTimeout.ulTimeout);
-#endif
-        }
-        else if(ubCommand == DELETE_COMMAND)
-        {
-            tIRDataTimeout.ubStatus = TIMEOUT_DISABLE;
-            Mid_RemoveIRTimeOut(tIRDataTimeout.uwTrigID);
-#ifdef SHOW_DEBUG_DECODE
-            NRF_LOG_INFO("Command: %s", (ubCommand == CREATE_COMMAND) ? "Create" : "Delete");
-            NRF_LOG_INFO("TrigID: %d", tIRDataTimeout.uwTrigID);
-#endif
-        }
-    }
-    else
-    {
-#ifdef SHOW_DEBUG_DECODE
-    	NRF_LOG_INFO("Error code: %d", ubReturnValue);
-#endif
+    	NRF_LOG_INFO("Can't decode command");
     }
 }
 
@@ -135,6 +102,7 @@ bool Mid_DecodeTimeBasedSchedulingDecode(uint8_t * ubCommand, IrDataTrigger_t * 
 	char * token;
 	uint8_t TempData[16];
 	strncpy((char * )TempData, (char *)pData, len);
+	TempData[len] = '\0';
 	token = my_strtok((char *)TempData, "-");
     while(token != NULL && *ubNumOfCompenent < 6)
     {
@@ -200,22 +168,37 @@ bool Mid_DecodeTimeBasedSchedulingDecode(uint8_t * ubCommand, IrDataTrigger_t * 
             }
             case TIME1_INDEX:
             {
-                if(strlen(token) == 4)
-                {
-                    if(CheckStringIsNumber((uint8_t *)token, strlen(token)) == true)
-                    {
-                        tIRDataTrigger->tTime1.ubHour = StrToInt((uint8_t *)(&token[0]), 2);
-                        tIRDataTrigger->tTime1.ubMin = StrToInt((uint8_t *)(&token[2]), 2);
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
+            	if(g_ubTriggerType == SCHEDULING_TYPE)
+            	{
+					if(strlen(token) == 4)
+					{
+						if(CheckStringIsNumber((uint8_t *)token, strlen(token)) == true)
+						{
+							tIRDataTrigger->tTime1.ubHour = StrToInt((uint8_t *)(&token[0]), 2);
+							tIRDataTrigger->tTime1.ubMin = StrToInt((uint8_t *)(&token[2]), 2);
+						}
+						else
+						{
+							return false;
+						}
+					}
+					else
+					{
+						return false;
+					}
+            	}
+            	else if(g_ubTriggerType == TIMEOUT_TYPE)
+            	{
+					uint32_t ulTimeOutTemp = 0;
+					if(ConvertStringToHex32Bit((uint8_t *)(token), strlen(token), &ulTimeOutTemp))
+					{
+						tIRDataTrigger->ulTimeout = ulTimeOutTemp;
+					}
+					else
+					{
+						return false;
+					}
+            	}
                 break;
             }
             case TIME2_INDEX:
@@ -265,18 +248,33 @@ bool Mid_InsertNewIRTrigger(IrDataTrigger_t * tIRDataTrigger)
     {
         if(g_atIRDataTrigger[i].uwTrigID == tIRDataTrigger->uwTrigID && g_atIRDataTrigger[i].ubMode != NONE)
         {
+        	NRF_LOG_INFO("Can't inster new IR trigger - duplicate");
             return false;
         }
     }
     for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
     {
-        if(g_atIRDataTrigger[i].ubMode == NONE)
+        if(g_atIRDataTrigger[i].ubMode != MOTION__TRIGGER &&
+			g_atIRDataTrigger[i].ubMode != ONE_TRIGGER &&
+			g_atIRDataTrigger[i].ubMode != WINDOW_TRIGGER &&
+			g_atIRDataTrigger[i].ubMode != TIMEOUT_TRIGGER)
         {
             myMemCpy(&g_atIRDataTrigger[i], tIRDataTrigger, sizeof(IrDataTrigger_t));
+        	NRF_LOG_INFO("Insert new IR trigger");
+        	NRF_LOG_INFO("Mode: %d", g_atIRDataTrigger[i].ubMode);
+        	NRF_LOG_INFO("TrigID: %d", g_atIRDataTrigger[i].uwTrigID);
+        	NRF_LOG_INFO("IR Code: %d", g_atIRDataTrigger[i].uwIrCode);
+        	NRF_LOG_INFO("Days: 0x%X", g_atIRDataTrigger[i].ubDays);
+        	NRF_LOG_INFO("Time 1: %d:%d", g_atIRDataTrigger[i].tTime1.ubHour, g_atIRDataTrigger[i].tTime1.ubMin);
+        	NRF_LOG_INFO("Time 2: %d:%d", g_atIRDataTrigger[i].tTime2.ubHour, g_atIRDataTrigger[i].tTime2.ubMin);
+        	NRF_LOG_INFO("Time out: %d", g_atIRDataTrigger[i].ulTimeout);
             g_ubIRTriggerCount++;
+            Mid_FlashErase(IR_TRIG_START_ADDRESS, 1);
+            Mid_FlashWrite(IR_TRIG_START_ADDRESS, g_atIRDataTrigger, SIZE_OF_IR_TRIG_VAR);
             return true;
         }
     }
+    NRF_LOG_INFO("Can't inster new IR trigger");
     return false;
 }
 
@@ -284,9 +282,12 @@ bool Mid_RemoveIRTrigger(uint16_t uwTrigID)
 {
     for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
     {
-        if(g_atIRDataTrigger[i].uwTrigID == uwTrigID)
+        if(g_atIRDataTrigger[i].uwTrigID == uwTrigID && g_atIRDataTrigger[i].ubMode != NONE)
         {
             g_atIRDataTrigger[i].ubMode = NONE;
+            NRF_LOG_INFO("Delete TR Trigger: %d", g_atIRDataTrigger[i].uwTrigID);
+            Mid_FlashErase(IR_TRIG_START_ADDRESS, 1);
+            Mid_FlashWrite(IR_TRIG_START_ADDRESS, t_IRDataCommom, SIZE_OF_IR_DATA_VAR);
             g_ubIRTriggerCount--;
             return true;
         }
@@ -294,145 +295,13 @@ bool Mid_RemoveIRTrigger(uint16_t uwTrigID)
     return false;
 }
 
-uint8_t Mid_DecodeTimeOutDecode(uint8_t * ubCommand, IrDataTimeout_t * tIRDataTimeout,  uint8_t * ubNumOfCompenent, uint8_t * pData, uint8_t len)
+void Mid_EraseAllITrigger(void)
 {
-	char * token;
-	uint8_t TempData[16];
-	myMemCpy(TempData, pData, len);
-	TempData[len] = '\0';
-	token = my_strtok((char *)TempData, "-");
-    while(token != NULL && *ubNumOfCompenent < 6)
-    {
-        switch (*ubNumOfCompenent)
-        {
-            case TIMEOUT_COMMAND_INDEX:
-            {
-                if(strlen(token) == 1)
-                {
-                    if(token[0] == CREATE_COMMAND || token[0] == DELETE_COMMAND)
-                    {
-                        *ubCommand = token[0];
-                    }
-                    else
-                    {
-                        return TIMEOUT_COMMAND_INVALID;
-                    }
-                }
-                else
-                {
-                    return TIMEOUT_COMMAND_INVALID;
-                }
-                break;
-            }
-            case TIMEOUT_TRIGGER_ID_INDEX:
-            {
-                uint8_t ubTemp = 0;
-                if(ConvertStringToHex((uint8_t *)token, strlen(token), &ubTemp) == true)
-                {
-                    tIRDataTimeout->uwTrigID = ubTemp;
-                }
-                else
-                {
-                    return TIMEOUT_TRIGGER_ID_INVALID;
-                }
-                break;
-            }
-            case TIMEOUT_IR_CODE_INDEX:
-            {
-                uint8_t ubTemp = 0;
-                if(ConvertStringToHex((uint8_t *)token, strlen(token), &ubTemp) == true)
-                {
-                    tIRDataTimeout->uwIrCode = ubTemp;
-                }
-                else
-                {
-                    return TIMEOUT_TRIGGER_IR_INVALID;
-                }
-                break;
-            }
-            case TIMEOUT_DAYS:
-            {
-                uint8_t ubTemp = 0;
-                if(ConvertStringToHex((uint8_t *)token, strlen(token), &ubTemp) == true)
-                {
-                    tIRDataTimeout->ubDays = ubTemp;
-                }
-                else
-                {
-                    return TIMEOUT_DAYS_INVALID;
-                }
-                break;
-            }
-            case TIMEOUT_INDEX:
-            {
-                uint32_t ulTemp = 0;
-                if(ConvertStringToHex32Bit((uint8_t *)token, strlen(token), &ulTemp) == true)
-                {
-                    tIRDataTimeout->ulTimeout = ulTemp;
-                }
-                else
-                {
-                	NRF_LOG_INFO("%s - %d", token, strlen(token));
-                    return TIMEOUT_INDEX_INVALID;
-                }
-                break;
-            }
-            default:
-                break;
-        }
-        token = my_strtok(NULL, "-");
-        (*ubNumOfCompenent)++;
-    }
-    return NO_ERROR;
-}
-
-int16_t Mid_FindIRTimeout(uint16_t uwTrigID)
-{
-    for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
-    {
-        if(g_atIRTimeOut[i].uwTrigID == uwTrigID)
-        {
-            return i;
-        }
-    }
-    return -1;
-}
-
-bool Mid_InsertNewIRTimeOut(IrDataTimeout_t * tIRDataTimeOut)
-{
-    for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
-    {
-        if(g_atIRTimeOut[i].uwTrigID == tIRDataTimeOut->uwTrigID && g_atIRTimeOut[i].ubStatus == TIMEOUT_ENABLE)
-        {
-            return false;
-        }
-    }
-    for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
-    {
-        if(g_atIRTimeOut[i].ubStatus == TIMEOUT_DISABLE)
-        {
-            myMemCpy(&g_atIRTimeOut[i], tIRDataTimeOut, sizeof(IrDataTimeout_t));
-            g_ubIRTimeOutCount++;
-            Mid_FlashErase(IR_DATA_START_ADDRESS, 1);
-            Mid_FlashWrite(IR_DATA_START_ADDRESS, t_IRDataCommom, SIZE_OF_IR_DATA_VAR);
-            return true;
-        }
-    }
-    return false;
-}
-
-bool Mid_RemoveIRTimeOut(uint16_t uwTrigID)
-{
-    for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
-    {
-        if(g_atIRTimeOut[i].uwTrigID == uwTrigID)
-        {
-            g_atIRTimeOut[i].ubStatus = TIMEOUT_DISABLE;
-            g_ubIRTimeOutCount--;
-            return true;
-        }
-    }
-    return false;
+	for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
+	{
+		g_atIRDataTrigger[i].uwTrigID = CLEAR;
+		g_atIRDataTrigger[i].ubMode = NONE;
+	}
 }
 
 bool Mid_InsertNewIRCode(IRData * tIRData, uint16_t uwLearnID)
@@ -456,6 +325,10 @@ bool Mid_InsertNewIRCode(IRData * tIRData, uint16_t uwLearnID)
 			NRF_LOG_INFO("Command = %d", t_IRDataCommom[g_ubIRCount].IRData.command);
 			NRF_LOG_INFO("Number of bit = %d", t_IRDataCommom[g_ubIRCount].IRData.numberOfBits);
 			NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[g_ubIRCount].IRData.decodedRawData);
+			NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[g_ubIRCount].IRData.decodedRawDataArray[0]);
+			NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[g_ubIRCount].IRData.decodedRawDataArray[1]);
+			NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[g_ubIRCount].IRData.decodedRawDataArray[2]);
+			NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[g_ubIRCount].IRData.decodedRawDataArray[3]);
 			NRF_LOG_INFO("=> Saving IR code...");
 			NRF_LOG_INFO("=> Noti to app...");
 #endif
@@ -463,6 +336,30 @@ bool Mid_InsertNewIRCode(IRData * tIRData, uint16_t uwLearnID)
 		}
 	}
 	return false;
+}
+
+bool Mid_RemoveIRCode(uint16_t ulEraseID)
+{
+	for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
+	{
+		if(t_IRDataCommom[i].uwID == ulEraseID && t_IRDataCommom[i].ulStatus == IR_CODE_ENABLE)
+		{
+			t_IRDataCommom[i].uwID = CLEAR;
+			t_IRDataCommom[i].ulStatus = IR_CODE_DISABLE;
+            Mid_FlashErase(IR_DATA_START_ADDRESS, 1);
+            Mid_FlashWrite(IR_DATA_START_ADDRESS, t_IRDataCommom, SIZE_OF_IR_DATA_VAR);
+		}
+	}
+	return false;
+}
+
+void Mid_EraseAllIRCode(void)
+{
+	for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
+	{
+		t_IRDataCommom[i].uwID = CLEAR;
+		t_IRDataCommom[i].ulStatus = IR_CODE_DISABLE;
+	}
 }
 
 void Mid_DecodeRTCSet(void *p_event_data, uint16_t event_size)

@@ -3,6 +3,7 @@
 const char * c_ubProtocolName[PROCOTL_LEN] = PROTOCOLNAME;
 static uint16_t uwBufferLearnID = CLEAR;
 static uint16_t uwBufferEmitID = CLEAR;
+static uint16_t uwBufferEraseID = CLEAR;
 void App_ControlHandle(void)
 {
 	if(APP_START_LEARN_IR_FLAG == C_ON)
@@ -16,22 +17,8 @@ void App_ControlHandle(void)
 				APP_START_LEARN_IR_FLAG = C_OFF;
 				APP_LEARN_IR_COUNT_START_FLAG = C_OFF;
 				// Save IR code
-//				t_IRDataCommom[g_ubIRCount].uwID = uwBufferLearnID;
-//				myMemCpy(&t_IRDataCommom[g_ubIRCount].IRData, &decodedIRData, sizeof(decodedIRData));
 				Mid_InsertNewIRCode(&decodedIRData, uwBufferLearnID);
-//				for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
-//				{
-//					if(t_IRDataCommom[i].ulStatus != IR_CODE_ENABLE)
-//					{
-//						t_IRDataCommom[i].ulStatus = IR_CODE_ENABLE;
-//						t_IRDataCommom[i].uwID = uwBufferLearnID;
-//						myMemCpy(&t_IRDataCommom[i].IRData, &decodedIRData, sizeof(decodedIRData));
-//						g_ubIRCount = i;
-//						break;
-//					}
-//				}
-				// Show infor IR code
-//				g_ubIRCount++;
+
 			}
 			else
 			{
@@ -57,14 +44,19 @@ void App_ControlHandle(void)
 			NRF_LOG_INFO("Number of bit = %d", t_IRDataCommom[ubIndex].IRData.numberOfBits);
 			NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[ubIndex].IRData.decodedRawData);
 
-			sendPanasonic(t_IRDataCommom[ubIndex].IRData.address, t_IRDataCommom[ubIndex].IRData.command, 1);
-
+			Mid_IrSendCommon(&t_IRDataCommom[ubIndex].IRData);
 		}
 		else
 		{
 			NRF_LOG_INFO("Can't find IR code");
 		}
 		APP_START_EMIT_IR_FLAG = C_OFF;
+	}
+
+	if(APP_START_ERASE_IR_FLAG == C_ON)
+	{
+		Mid_RemoveIRCode(uwBufferEraseID);
+		APP_START_ERASE_IR_FLAG = C_OFF;
 	}
 
 	if(KEY_3SEC_CLICK_FLAG == C_ON)
@@ -74,11 +66,16 @@ void App_ControlHandle(void)
 			NRF_LOG_INFO("Key switch 1: 3s");
 			NRF_LOG_INFO("=> Erase IR data");
 			Mid_FlashErase(IR_DATA_START_ADDRESS, 1);
+			Mid_EraseAllIRCode();
+
 		}
 
 		if(g_ulKeyInValue == KEY_SWITCH_2)
 		{
 			NRF_LOG_INFO("Key switch 2: 3s");
+			NRF_LOG_INFO("=> Erase IR Trigger");
+			Mid_FlashErase(IR_TRIG_START_ADDRESS, 1);
+			Mid_EraseAllITrigger();
 		}
 	}
 	KEY_1CLICK_FLAG = C_OFF;
@@ -106,5 +103,11 @@ void App_ControlStartEmitIR(uint16_t uwIrID)
 {
 	APP_START_EMIT_IR_FLAG = C_ON;
 	uwBufferEmitID = uwIrID;
+}
+
+void App_ControlEraseIR(uint16_t uwIrID)
+{
+	APP_START_ERASE_IR_FLAG = C_ON;
+	uwBufferEraseID = uwIrID;
 }
 

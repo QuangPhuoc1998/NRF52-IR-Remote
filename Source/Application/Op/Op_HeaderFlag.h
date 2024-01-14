@@ -36,6 +36,7 @@ HEADER_FLAG volatile USER_TBYTE	g_FubOperation1;
 #define IR_SCAN_DELAY_FLAG						g_FubOperation1.byte_bit.b3
 #define DETECT_IR_SIGNAL_DONE_FLAG				g_FubOperation1.byte_bit.b4
 #define APP_START_EMIT_IR_FLAG					g_FubOperation1.byte_bit.b5
+#define APP_START_ERASE_IR_FLAG					g_FubOperation1.byte_bit.b6
 
 HEADER_FLAG USER_TBYTE	g_FubTimerCount1;
 /***************************************************************************/

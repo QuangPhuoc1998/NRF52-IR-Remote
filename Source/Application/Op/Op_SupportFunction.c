@@ -14,19 +14,28 @@ uint32_t power(uint32_t ulXNumber, uint8_t ulYNumber)
 
 uint16_t ConvertID(uint8_t * pData, uint8_t len)
 {
-    uint16_t uwRetureData = 0;
-    for(uint8_t i = 0 ; i < len ; i++)
-    {
-        if(pData[i] == 0x20)
-        {
-            uwRetureData /= power(10, len-i);
-        }
-        else
-        {
-            uwRetureData += (pData[i]-0x30) * power(10, len-i-1);
-        }
-    }
-    return uwRetureData;
+	uint16_t ulResult = 0;
+	uint8_t ubCharToHex = 0;
+
+	if(len > 2)
+	{
+		return false;
+	}
+
+	if(pData[1] == 0x20)
+	{
+		len = 1;
+	}
+
+	for(uint8_t i = 0 ; i < len ; i++)
+	{
+		if(ConvertCharToHex(pData[i], &ubCharToHex) == false)
+		{
+			return 0;
+		}
+		ulResult |= ubCharToHex << ((len-i-1) * 4);
+	}
+	return ulResult;
 }
 
 void myMemCpy(void *dest, void *src, size_t n)
@@ -42,11 +51,20 @@ void myMemCpy(void *dest, void *src, size_t n)
 	}
 }
 
+void myMemSet(void *dest, uint8_t ubData, size_t n)
+{
+	char *cdest = (char *)dest;
+	for (int i=0; i<n; i++)
+	{
+		cdest[i] = ubData;
+	}
+}
+
 int16_t LinearSerachID(IRData_t * pData, uint8_t ubSize, uint16_t uwKey)
 {
 	for(uint8_t i = 0 ; i < ubSize ; i++)
 	{
-		if(pData[i].uwID == uwKey)
+		if(pData[i].uwID == uwKey && pData[i].ulStatus == IR_CODE_ENABLE)
 		{
 			return i;
 		}

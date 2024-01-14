@@ -6,7 +6,7 @@
  * @param[in] p_ble_evt  Event received from the BLE stack.
  */
 
-uint8_t g_ubValueHandle[7] = {0,0,0,0,0,0,0};
+uint8_t g_ubValueHandle[8] = {0,0,0,0,0,0,0,0};
 uint8_t g_ubValueIndex = 0;
 
 static void on_write(ble_cus_t * p_cus, ble_evt_t const * p_ble_evt)
@@ -22,14 +22,14 @@ static void on_write(ble_cus_t * p_cus, ble_evt_t const * p_ble_evt)
     }
     else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_MOT_SENS_INDEX])
     {
-    	NRF_LOG_INFO("*--- Motion sens command ---*/");
-    	NRF_LOG_INFO("Data len: %d", p_evt_write->len);
-
-    	for(uint8_t i = 0 ; i < p_evt_write->len ; i++)
-    	{
-    		NRF_LOG_INFO("0x%X - %c", p_evt_write->data[i], p_evt_write->data[i]);
-    	}
-    	Mid_DecodeCommand(CUS_UUID_MOT_SENS_INDEX, (uint8_t *)p_evt_write->data, p_evt_write->len);
+//    	NRF_LOG_INFO("*--- Motion sens command ---*/");
+//    	NRF_LOG_INFO("Data len: %d", p_evt_write->len);
+//
+//    	for(uint8_t i = 0 ; i < p_evt_write->len ; i++)
+//    	{
+//    		NRF_LOG_INFO("0x%X - %c", p_evt_write->data[i], p_evt_write->data[i]);
+//    	}
+//    	Mid_DecodeCommand(CUS_UUID_MOT_SENS_INDEX, (uint8_t *)p_evt_write->data, p_evt_write->len);
     }
     else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_MOT_TOUT_INDEX])
 	{
@@ -73,6 +73,15 @@ static void on_write(ble_cus_t * p_cus, ble_evt_t const * p_ble_evt)
     	NRF_LOG_INFO("Raw: 0x%X 0x%X",p_evt_write->data[0], p_evt_write->data[1]);
     	NRF_LOG_INFO("ID: %d",ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
     	App_ControlStartEmitIR(ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
+	}
+    else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_IR_ERASE_INDEX])
+	{
+    	NRF_LOG_INFO("/*--- IR erase command ---*/");
+
+    	NRF_LOG_INFO("Len: %d",p_evt_write->len);
+    	NRF_LOG_INFO("Raw: 0x%X 0x%X",p_evt_write->data[0], p_evt_write->data[1]);
+    	NRF_LOG_INFO("ID: %d",ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
+    	App_ControlEraseIR(ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
 	}
 }
 
@@ -252,6 +261,27 @@ uint32_t ble_cus_init(ble_cus_t * p_cus, const ble_cus_init_t * p_cus_init)
     // Add IR emitting characteristic.
     memset(&add_char_params, 0, sizeof(add_char_params));
     add_char_params.uuid             = CUS_UUID_IR_EMMIT;
+    add_char_params.uuid_type        = p_cus->uuid_type;
+    add_char_params.init_len         = sizeof(uint8_t);
+    add_char_params.max_len          = sizeof(uint8_t)*64;
+    add_char_params.char_props.read  = 1;
+    add_char_params.char_props.write = 1;
+
+    add_char_params.read_access  = SEC_OPEN;
+    add_char_params.write_access = SEC_OPEN;
+
+    err_code = characteristic_add(p_cus->service_handle, &add_char_params, &p_cus->led_char_handles);
+
+    g_ubValueHandle[g_ubValueIndex++] = p_cus->led_char_handles.value_handle;
+
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+    // Add IR emitting characteristic.
+    memset(&add_char_params, 0, sizeof(add_char_params));
+    add_char_params.uuid             = CUS_UUID_IR_ERASE;
     add_char_params.uuid_type        = p_cus->uuid_type;
     add_char_params.init_len         = sizeof(uint8_t);
     add_char_params.max_len          = sizeof(uint8_t)*64;
