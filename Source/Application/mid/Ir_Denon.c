@@ -47,12 +47,12 @@ void sendDenon(uint8_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats, boo
     }
 }
 
-bool decodeSharp()
+bool decodeSharp(void)
 {
     return decodeDenon();
 }
 
-bool decodeDenon()
+bool decodeDenon(void)
 {
 
     // we have no start bit, so check for the exact amount of data bits

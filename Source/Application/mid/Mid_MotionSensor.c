@@ -5,7 +5,6 @@
 
 static volatile bool HandlerIsReady = true;
 static volatile bool MotionIsDetect = false;
-static uint8_t s_ubMotionCount = 0;
 static nrf_saadc_value_t samples[SAADC_CHANNEL_COUNT];
 static nrfx_saadc_channel_t channels[SAADC_CHANNEL_COUNT] = {NRFX_SAADC_DEFAULT_CHANNEL_SE(NRF_SAADC_INPUT_AIN3, 0)};
 
@@ -47,21 +46,43 @@ static void Mid_MotionSensorHandler(nrfx_saadc_evt_t const * p_event)
 {
     if (p_event->type == NRFX_SAADC_EVT_DONE)
     {
-    	if(p_event->data.done.p_buffer[0] < 100)
+    	if(p_event->data.done.p_buffer[0] < 100 && MOTION_SENSOR_DISABLE == C_OFF)
     	{
-    		s_ubMotionCount++;
-    		if(s_ubMotionCount >= 8)
+    		if(MOTION_SENSOR_START_SENSING == C_OFF)
     		{
-    			MotionIsDetect = true;
-    			s_ubMotionCount = 0;
+    			MOTION_SENSOR_START_SENSING = C_ON;
     		}
+    		g_ubMotionCount++;
+    		if(g_ubMotionCount <= MOTION_SENSOR_SENSITIVITY_LEVEL_0)
+    		{
+    			if(g_ubMotionCount >= MOTION_SENSOR_SENSITIVITY_LEVEL_NONE)
+    			{
+    				g_ubMotionSensorGrade = SENSITIVITY_LEVEL_0;
+    			}
+    		}
+    		else if(g_ubMotionCount <= MOTION_SENSOR_SENSITIVITY_LEVEL_1)
+    		{
+    			g_ubMotionSensorGrade = SENSITIVITY_LEVEL_1;
+    		}
+    		else if(g_ubMotionCount <= MOTION_SENSOR_SENSITIVITY_LEVEL_2)
+			{
+    			g_ubMotionSensorGrade = SENSITIVITY_LEVEL_2;
+			}
+    		else if(g_ubMotionCount <= MOTION_SENSOR_SENSITIVITY_LEVEL_3)
+			{
+    			g_ubMotionSensorGrade = SENSITIVITY_LEVEL_3;
+			}
+    		else if(g_ubMotionCount <= MOTION_SENSOR_SENSITIVITY_LEVEL_4)
+			{
+    			g_ubMotionSensorGrade = SENSITIVITY_LEVEL_4;
+			}
+    		NRF_LOG_INFO("ADC = %d", p_event->data.done.p_buffer[0]);
     	}
-    	else
+    	else if(MOTION_SENSOR_START_SENSING == C_OFF)
     	{
-    		s_ubMotionCount = 0;
+    		g_ubMotionCount = 0;
     		MotionIsDetect = false;
     	}
-    	//NRF_LOG_INFO("ADC = %d", p_event->data.done.p_buffer[0]);
         HandlerIsReady = true;
     }
 }

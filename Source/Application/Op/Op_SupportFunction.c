@@ -223,3 +223,13 @@ char * my_strtok(char *srcString, char *delim)
         srcString++;
     }
 }
+
+uint16_t ConvertArrayToNumber(uint8_t * pData, uint8_t ubLen)
+{
+    uint16_t ulResult = 0;
+    for(uint8_t i = 0 ; i < ubLen ; i++)
+    {
+        ulResult += pData[i] << (8 * (ubLen-1-i));
+    }
+    return ulResult;
+}

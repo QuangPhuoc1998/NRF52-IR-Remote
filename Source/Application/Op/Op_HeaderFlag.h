@@ -56,4 +56,11 @@ HEADER_FLAG USER_TBYTE KeyFlag2;
 #define KEY_RELEASE_CLICK_FLAG            KeyFlag2.byte_bit.b0
 #define ERROR_KEYSHORT_FLAG               KeyFlag2.byte_bit.b1
 #define KEY_PRESS_HOLD_FLAG               KeyFlag2.byte_bit.b2
+/***************************************************************************/
+/*					   	FLAG FOR MOTION SENSOR							   */
+/***************************************************************************/
+HEADER_FLAG USER_TBYTE MotionSensorFlag1;
+#define MOTION_SENSOR_START_SENSING            	MotionSensorFlag1.byte_bit.b0
+#define MOTION_SENSOR_SENSING_DONE				MotionSensorFlag1.byte_bit.b1
+#define MOTION_SENSOR_DISABLE					MotionSensorFlag1.byte_bit.b2
 #endif // _OP_HEADER_FLAG_H_

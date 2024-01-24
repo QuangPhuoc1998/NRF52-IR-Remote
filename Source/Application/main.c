@@ -96,6 +96,32 @@ void SysTimer100msCall(void * p_context)
 			IR_SCAN_DELAY_FLAG = C_OFF;
 		}
 	}
+	//
+	App_AlarmOnTimeHandler();
+	//
+	if(MOTION_SENSOR_START_SENSING == C_ON)
+	{
+		g_ubMotionSensorCountTime++;
+		if(g_ubMotionSensorCountTime >= TIME_2S_BY_100MS)
+		{
+			MOTION_SENSOR_DISABLE = C_ON;
+			MOTION_SENSOR_SENSING_DONE = C_ON;
+			MOTION_SENSOR_START_SENSING = C_OFF;
+			g_ubMotionSensorCountTime = CLEAR;
+			NRF_LOG_INFO("Sensor leve: %d - %d", g_ubMotionSensorGrade, g_ubMotionCount);
+			g_ubMotionSensorGrade = SENSITIVITY_LEVEL_NONE;
+		}
+	}
+	//
+	if(MOTION_SENSOR_DISABLE == C_ON)
+	{
+		g_ubMotionSensorDisableTime++;
+		if(g_ubMotionSensorDisableTime >= TIME_3S_BY_100MS)
+		{
+			MOTION_SENSOR_DISABLE = C_OFF;
+			g_ubMotionSensorDisableTime = CLEAR;
+		}
+	}
 }
 void SysTimer1000msCall(void * p_context)
 {

@@ -37,7 +37,7 @@ PulseDistanceWidthProtocolConstants KaseikyoProtocolConstants = {KASEIKYO, KASEI
 KASEIKYO_HEADER_SPACE, KASEIKYO_BIT_MARK, KASEIKYO_ONE_SPACE, KASEIKYO_BIT_MARK, KASEIKYO_ZERO_SPACE}, PROTOCOL_IS_LSB_FIRST
        , (KASEIKYO_REPEAT_PERIOD / MICROS_IN_ONE_MILLI), NULL };
 
-bool decodeKaseikyo()
+bool decodeKaseikyo(void)
 {
     decode_type_t tProtocol;
     // Check we have enough data (96 + 4) 4 for initial gap, start bit mark and space + stop bit mark

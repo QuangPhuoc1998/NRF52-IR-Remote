@@ -1,6 +1,6 @@
 #include "main.h"
 
-#define SHOW_DEBUG_RTC
+//#define SHOW_DEBUG_RTC
 
 void Mid_RTCInit(void)
 {
@@ -11,6 +11,9 @@ void Mid_RTCHandle(void *p_event_data, uint16_t event_size)
 {
 	g_ullUnixTimeStamp++;
 	Mid_RTCConvertUnixToDate(g_ullUnixTimeStamp, &g_tCommonTime);
+#ifdef SHOW_DEBUG_RTC
+	NRF_LOG_INFO("%d:%d:%d", g_tCommonTime.hour, g_tCommonTime.minute, g_tCommonTime.second);
+#endif
 //	NRF_LOG_INFO("Hour : %d", g_tCommonTime.hour);
 //	NRF_LOG_INFO("Min : %d", g_tCommonTime.minute);
 //	NRF_LOG_INFO("Sec : %d", g_tCommonTime.second);

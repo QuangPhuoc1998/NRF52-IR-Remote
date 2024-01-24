@@ -38,7 +38,8 @@ void sendNECSpecialRepeat(void)
     mark(NEC_BIT_MARK);             // + 560
 }
 
-uint32_t computeNECRawDataAndChecksum(uint16_t aAddress, uint16_t aCommand) {
+uint32_t computeNECRawDataAndChecksum(uint16_t aAddress, uint16_t aCommand)
+{
     union LongUnion tRawData;
 
     // Address 16 bit LSB first
@@ -62,7 +63,8 @@ uint32_t computeNECRawDataAndChecksum(uint16_t aAddress, uint16_t aCommand) {
  * @param aNumberOfRepeats  If < 0 then only a special repeat frame without leading and trailing space
  *                          will be sent by calling NECProtocolConstants.SpecialSendRepeatFunction().
  */
-void sendNEC(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats) {
+void sendNEC(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats)
+{
     sendPulseDistanceWidthV1(&NECProtocolConstants, computeNECRawDataAndChecksum(aAddress, aCommand), NEC_BITS, aNumberOfRepeats);
 }
 
@@ -71,7 +73,8 @@ void sendNEC(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats) {
  * There is NO delay after the last sent repeat!
  * @param aNumberOfRepeats  If < 0 then nothing is sent.
  */
-void sendNEC2(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats) {
+void sendNEC2(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats)
+{
     sendPulseDistanceWidthV1(&NEC2ProtocolConstants, computeNECRawDataAndChecksum(aAddress, aCommand), NEC_BITS, aNumberOfRepeats);
 }
 
@@ -81,7 +84,8 @@ void sendNEC2(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats) {
  * @param aNumberOfRepeats  If < 0 then only a special repeat frame without leading and trailing space
  *                          will be sent by calling NECProtocolConstants.SpecialSendRepeatFunction().
  */
-void sendOnkyo(uint16_t aAddress, uint16_t aCommand, uint8_t aNumberOfRepeats) {
+void sendOnkyo(uint16_t aAddress, uint16_t aCommand, uint8_t aNumberOfRepeats)
+{
     sendPulseDistanceWidthV1(&NECProtocolConstants, (uint32_t) aCommand << 16 | aAddress, NEC_BITS, aNumberOfRepeats);
 }
 
@@ -94,7 +98,8 @@ void sendOnkyo(uint16_t aAddress, uint16_t aCommand, uint8_t aNumberOfRepeats) {
  * @param aNumberOfRepeats  If < 0 then only a special repeat frame without leading and trailing space
  *                          will be sent by calling NECProtocolConstants.SpecialSendRepeatFunction().
  */
-void sendApple(uint8_t aDeviceId, uint8_t aCommand, uint8_t aNumberOfRepeats) {
+void sendApple(uint8_t aDeviceId, uint8_t aCommand, uint8_t aNumberOfRepeats)
+{
     union LongUnion tRawData;
 
     // Address 16 bit LSB first
@@ -112,7 +117,8 @@ void sendApple(uint8_t aDeviceId, uint8_t aCommand, uint8_t aNumberOfRepeats) {
  * @param aNumberOfRepeats  If < 0 then only a special repeat frame without leading and trailing space
  *                          will be sent by calling NECProtocolConstants.SpecialSendRepeatFunction().
  */
-void sendNECRaw(uint32_t aRawData, uint8_t aNumberOfRepeats) {
+void sendNECRaw(uint32_t aRawData, uint8_t aNumberOfRepeats)
+{
     sendPulseDistanceWidthV1(&NECProtocolConstants, aRawData, NEC_BITS, aNumberOfRepeats);
 }
 

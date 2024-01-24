@@ -49,4 +49,11 @@ HEADER_VARIABLE volatile uint32_t g_ulKeyInValue;
 HEADER_VARIABLE uint8_t g_ubKeyPositionValue;
 HEADER_VARIABLE uint16_t g_uwKeyContinousCount;
 HEADER_VARIABLE uint8_t g_ubUpDownMoveValue;
+/***************************************************************************/
+/*					     VARIABLE FOR MOTION SENSOR						   */
+/***************************************************************************/
+HEADER_VARIABLE uint8_t g_ubMotionSensorGrade;
+HEADER_VARIABLE uint8_t	g_ubMotionSensorCountTime;
+HEADER_VARIABLE uint8_t	g_ubMotionSensorDisableTime;
+HEADER_VARIABLE uint8_t g_ubMotionCount;
 #endif

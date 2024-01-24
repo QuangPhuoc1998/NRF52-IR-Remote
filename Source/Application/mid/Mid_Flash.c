@@ -1,6 +1,6 @@
 #include "main.h"
 
-#define FLASH_SHOW_DEBUG
+//#define FLASH_SHOW_DEBUG
 
 void print_flash_info(nrf_fstorage_t * p_fstorage);
 static void fstorage_evt_handler(nrf_fstorage_evt_t * p_evt);

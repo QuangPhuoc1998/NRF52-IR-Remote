@@ -2,20 +2,134 @@
 
 #define DEBUG_IR_SEND
 
-void Mid_IrSendCommon(IRData * tIrDataToSend)
+void Mid_IrSendCommon(IRData * tIrDataToSend, uint8_t aNumberOfRepeats)
 {
+	bool tIsRepeat = (tIrDataToSend->flags & IRDATA_FLAGS_IS_REPEAT);
+
 	switch (tIrDataToSend->protocol)
 	{
+		case NEC:
+		{
+			sendNEC(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case SAMSUNG:
+		{
+			sendSamsung(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case SAMSUNG48:
+		{
+			sendSamsung48(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case SAMSUNG_LG:
+		{
+			sendSamsungLG(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case SONY:
+		{
+			sendSony(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats, tIrDataToSend->numberOfBits);
+			break;
+		}
+		case PANASONIC:
+		{
+			Mid_IrSendPanasonic(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case DENON:
+		{
+			sendDenon(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats, false);
+			break;
+		}
+		case SHARP:
+		{
+			sendSharp(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case LG:
+		{
+			sendLG((uint8_t) tIrDataToSend->address, (uint8_t) tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case JVC:
+		{
+			sendJVC((uint8_t) tIrDataToSend->address, (uint8_t) tIrDataToSend->command, aNumberOfRepeats); // casts are required to specify the right function
+			break;
+		}
+		case RC5:
+		{
+			sendRC5(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats, !tIsRepeat); // No toggle for repeats
+			break;
+		}
+		case RC6:
+		{
+			sendRC6(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats, !tIsRepeat); // No toggle for repeats
+			break;
+		}
+		case KASEIKYO_JVC:
+		{
+			Mid_IrSendKaseikyo_JVC(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case KASEIKYO_DENON:
+		{
+			Mid_IrSendKaseikyo_Denon(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case KASEIKYO_SHARP:
+		{
+			sendKaseikyo_Sharp(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case KASEIKYO_MITSUBISHI:
+		{
+			Mid_IrSendKaseikyo_Mitsubishi(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case NEC2:
+		{
+			sendNEC2(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case ONKYO:
+		{
+			sendOnkyo(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case APPLE:
+		{
+			sendApple(tIrDataToSend->address, tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case BOSEWAVE:
+		{
+			sendBoseWave(tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case MAGIQUEST:
+		{
+			// we have a 32 bit ID/address
+			sendMagiQuest(tIrDataToSend->decodedRawData, tIrDataToSend->command);
+			break;
+		}
+		case FAST:
+		{
+			sendFAST(tIrDataToSend->command, aNumberOfRepeats);
+			break;
+		}
+		case LEGO_PF:
+		{
+			sendLegoPowerFunctions(tIrDataToSend->address, tIrDataToSend->command, tIrDataToSend->command >> 4, tIsRepeat); // send 5 autorepeats
+			break;
+		}
 		case PULSE_DISTANCE:
 		{
 			Mid_IrSendPulseDistance(tIrDataToSend);
 			break;
 		}
-		case PANASONIC:
-		{
-			Mid_IrSendPanasonic(tIrDataToSend->address, tIrDataToSend->command, 1);
-			break;
-		}
+
 		default:
 			break;
 	}

@@ -416,6 +416,9 @@ typedef struct
 #define TICKS_HIGH(us)  ((uint16_t ) ((long) (us) * UTOL / (MICROS_PER_TICK * 100) + 1))
 #endif
 
+#define MARK   1
+#define SPACE  0
+
 #define MARK_EXCESS_MICROS    20
 // ISR State-Machine : Receiver States
 #define IR_REC_STATE_IDLE      0 // Counting the gap time and waiting for the start bit to arrive
@@ -447,6 +450,19 @@ typedef struct
 	uint16_t milliseconds;
 	uint8_t dayOfWeek;
 } date_time_t;
+
+enum
+{
+	MON_INDEX,
+	TUE_INDEX,
+	WED_INDEX,
+	THUR_INDEX,
+	FRI_INDEX,
+	SAT_INDEX,
+	SUN_INDEX
+};
+
+#define CONVERT_DAYS_TO_INDED(Days)		(7-Days)
 /***************************************************************************/
 /*					   	   DEFINE FOR SETTING IR						   */
 /***************************************************************************/
@@ -456,7 +472,7 @@ typedef struct
 enum
 {
     NONE,
-    MOTION__TRIGGER,
+    MOTION_TRIGGER,
     ONE_TRIGGER,
     WINDOW_TRIGGER,
 	TIMEOUT_TRIGGER
@@ -505,7 +521,7 @@ typedef enum
 } SchedulingIrTrig_t;
 
 /***************************************************************************/
-/*					   		DEFIEN FOR ERROR CODE						   */
+/*					   		DEFINE FOR ERROR CODE						   */
 /***************************************************************************/
 enum
 {
@@ -518,7 +534,27 @@ enum
 
 };
 /***************************************************************************/
-/*					   DEFIEN FOR KASEIKYO PROTOCOL						   */
+/*					   	DEFINE FOR MOTION SENSOR				   		   */
+/***************************************************************************/
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_NONE	(2)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_0		(3)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_1		(6)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_2		(9)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_3		(12)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_4		(15)
+#define CONVERT_SENSITIVITY_TO_VALUE(Sensitivity)	(15-Sensitivity+1)
+
+enum
+{
+	SENSITIVITY_LEVEL_NONE,
+	SENSITIVITY_LEVEL_0,
+	SENSITIVITY_LEVEL_1,
+	SENSITIVITY_LEVEL_2,
+	SENSITIVITY_LEVEL_3,
+	SENSITIVITY_LEVEL_4
+};
+/***************************************************************************/
+/*					   DEFINE FOR KASEIKYO PROTOCOL						   */
 /***************************************************************************/
 #define KASEIKYO_VENDOR_ID_BITS     16
 #define KASEIKYO_VENDOR_ID_PARITY_BITS   4
@@ -546,14 +582,14 @@ enum
 #define SHARP_VENDOR_ID_CODE        0x5AAA
 #define JVC_VENDOR_ID_CODE          0x0103
 /***************************************************************************/
-/*					   DEFIEN FOR PULSE DISTANCE PROTOCOL				   */
+/*					   DEFINE FOR PULSE DISTANCE PROTOCOL				   */
 /***************************************************************************/
 #define DURATION_ARRAY_SIZE 50
 #if !defined(DISTANCE_WIDTH_MAXIMUM_REPEAT_DISTANCE_MICROS)
 #define DISTANCE_WIDTH_MAXIMUM_REPEAT_DISTANCE_MICROS       100000 // 100 ms, bit it is just a guess
 #endif
 /***************************************************************************/
-/*					   			DEFIEN FOR NEC				   			   */
+/*					   			DEFINE FOR NEC				   			   */
 /***************************************************************************/
 #define NEC_ADDRESS_BITS        16 // 16 bit address or 8 bit address and 8 bit inverted address
 #define NEC_COMMAND_BITS        16 // Command and inverted command
@@ -579,7 +615,7 @@ enum
 
 #define APPLE_ADDRESS           0x87EE
 /***************************************************************************/
-/*					   		DEFIEN FOR DENON				   			   */
+/*					   		DEFINE FOR DENON				   			   */
 /***************************************************************************/
 #define DENON_ADDRESS_BITS      5
 #define DENON_COMMAND_BITS      8
@@ -598,6 +634,235 @@ enum
 // for old decoder
 #define DENON_HEADER_MARK       DENON_UNIT // The length of the Header:Mark
 #define DENON_HEADER_SPACE      (3 * DENON_UNIT) // 780 // The length of the Header:Space
+/***************************************************************************/
+/*					   			DEFINE FOR SONY				   			   */
+/***************************************************************************/
+#define SONY_ADDRESS_BITS       5
+#define SONY_COMMAND_BITS       7
+#define SONY_EXTRA_BITS         8
+#define SONY_BITS_MIN           (SONY_COMMAND_BITS + SONY_ADDRESS_BITS)        // 12 bits
+#define SONY_BITS_15            (SONY_COMMAND_BITS + SONY_ADDRESS_BITS + 3)    // 15 bits
+#define SONY_BITS_MAX           (SONY_COMMAND_BITS + SONY_ADDRESS_BITS + SONY_EXTRA_BITS)    // 20 bits == SIRCS_20_PROTOCOL
+#define SONY_UNIT               600 // 24 periods of 40kHz
+
+#define SONY_HEADER_MARK        (4 * SONY_UNIT) // 2400
+#define SONY_ONE_MARK           (2 * SONY_UNIT) // 1200
+#define SONY_ZERO_MARK          SONY_UNIT
+#define SONY_SPACE              SONY_UNIT
+
+#define SONY_AVERAGE_DURATION_MIN   21000 // SONY_HEADER_MARK + SONY_SPACE  + 12 * 2,5 * SONY_UNIT  // 2.5 because we assume more zeros than ones
+#define SONY_AVERAGE_DURATION_MAX   33000 // SONY_HEADER_MARK + SONY_SPACE  + 20 * 2,5 * SONY_UNIT  // 2.5 because we assume more zeros than ones
+#define SONY_REPEAT_PERIOD          45000 // Commands are repeated every 45 ms (measured from start to start) for as long as the key on the remote control is held down.
+#define SONY_MAXIMUM_REPEAT_DISTANCE    (SONY_REPEAT_PERIOD - SONY_AVERAGE_DURATION_MIN) // 24 ms
+/***************************************************************************/
+/*					   		DEFINE FOR RC5 RC6				   			   */
+/***************************************************************************/
+#define RC5_ADDRESS_BITS        5
+#define RC5_COMMAND_BITS        6
+#define RC5_COMMAND_FIELD_BIT   1
+#define RC5_TOGGLE_BIT          1
+
+#define RC5_BITS            (RC5_COMMAND_FIELD_BIT + RC5_TOGGLE_BIT + RC5_ADDRESS_BITS + RC5_COMMAND_BITS) // 13
+
+#define RC5_UNIT            889 // 32 periods of 36 kHz (888.8888)
+
+#define MIN_RC5_MARKS       ((RC5_BITS + 1) / 2) // 7. Divided by 2 to handle the bit sequence of 01010101 which gives one mark and space for each 2 bits
+
+#define RC5_DURATION        (15L * RC5_UNIT) // 13335
+#define RC5_REPEAT_PERIOD   (128L * RC5_UNIT) // 113792
+#define RC5_REPEAT_DISTANCE (RC5_REPEAT_PERIOD - RC5_DURATION) // 100 ms
+#define RC5_MAXIMUM_REPEAT_DISTANCE     (RC5_REPEAT_DISTANCE + (RC5_REPEAT_DISTANCE / 4)) // Just a guess
+
+#define MIN_RC6_SAMPLES         1
+
+#define RC6_RPT_LENGTH      46000
+
+#define RC6_LEADING_BIT         1
+#define RC6_MODE_BITS           3 // never seen others than all 0 for Philips TV
+#define RC6_TOGGLE_BIT          1 // toggles at every key press. Can be used to distinguish repeats from 2 key presses and has another timing :-(.
+#define RC6_TOGGLE_BIT_INDEX    RC6_MODE_BITS //  fourth position, index = 3
+#define RC6_ADDRESS_BITS        8
+#define RC6_COMMAND_BITS        8
+
+#define RC6_BITS            (RC6_LEADING_BIT + RC6_MODE_BITS + RC6_TOGGLE_BIT + RC6_ADDRESS_BITS + RC6_COMMAND_BITS) // 21
+
+#define RC6_UNIT            444 // 16 periods of 36 kHz (444.4444)
+
+#define RC6_HEADER_MARK     (6 * RC6_UNIT) // 2666
+#define RC6_HEADER_SPACE    (2 * RC6_UNIT) // 889
+
+#define RC6_TRAILING_SPACE  (6 * RC6_UNIT) // 2666
+#define MIN_RC6_MARKS       4 + ((RC6_ADDRESS_BITS + RC6_COMMAND_BITS) / 2) // 12, 4 are for preamble
+
+#define RC6_REPEAT_DISTANCE 107000 // just a guess but > 2.666ms
+#define RC6_MAXIMUM_REPEAT_DISTANCE     (RC6_REPEAT_DISTANCE + (RC6_REPEAT_DISTANCE / 4)) // Just a guess
+/***************************************************************************/
+/*					   			DEFINE FOR LG				   			   */
+/***************************************************************************/
+#define LG_ADDRESS_BITS          8
+#define LG_COMMAND_BITS         16
+#define LG_CHECKSUM_BITS         4
+#define LG_BITS                 (LG_ADDRESS_BITS + LG_COMMAND_BITS + LG_CHECKSUM_BITS) // 28
+
+#define LG_UNIT                 500 // 19 periods of 38 kHz
+
+#define LG_HEADER_MARK          (18 * LG_UNIT) // 9000
+#define LG_HEADER_SPACE         4200           // 4200 | 84
+
+#define LG2_HEADER_MARK         (19 * LG_UNIT) // 9500
+#define LG2_HEADER_SPACE        (6 * LG_UNIT)  // 3000
+
+#define LG_BIT_MARK             LG_UNIT
+#define LG_ONE_SPACE            1580  // 60 periods of 38 kHz
+#define LG_ZERO_SPACE           550
+
+#define LG_REPEAT_HEADER_SPACE  (4 * LG_UNIT)  // 2250
+#define LG_REPEAT_PERIOD        110000 // Commands are repeated every 110 ms (measured from start to start) for as long as the key on the remote control is held down.
+//#define LG_AVERAGE_DURATION     58000 // LG_HEADER_MARK + LG_HEADER_SPACE  + 32 * 2,5 * LG_UNIT) + LG_UNIT // 2.5 because we assume more zeros than ones
+//#define LG_REPEAT_DURATION      (LG_HEADER_MARK  + LG_REPEAT_HEADER_SPACE + LG_BIT_MARK)
+//#define LG_REPEAT_DISTANCE      (LG_REPEAT_PERIOD - LG_AVERAGE_DURATION) // 52 ms
+/***************************************************************************/
+/*					   			DEFINE FOR JVC				   			   */
+/***************************************************************************/
+#define JVC_ADDRESS_BITS      8 // 8 bit address
+#define JVC_COMMAND_BITS      8 // Command
+
+#define JVC_BITS              (JVC_ADDRESS_BITS + JVC_COMMAND_BITS) // 16 - The number of bits in the protocol
+#define JVC_UNIT              526 // 20 periods of 38 kHz (526.315789)
+
+#define JVC_HEADER_MARK       (16 * JVC_UNIT) // 8400
+#define JVC_HEADER_SPACE      (8 * JVC_UNIT)  // 4200
+
+#define JVC_BIT_MARK          JVC_UNIT        // The length of a Bit:Mark
+#define JVC_ONE_SPACE         (3 * JVC_UNIT)  // 1578 - The length of a Bit:Space for 1's
+#define JVC_ZERO_SPACE        JVC_UNIT        // The length of a Bit:Space for 0's
+
+#define JVC_REPEAT_DISTANCE   (uint16_t)(45 * JVC_UNIT)  // 23625 - Commands are repeated with a distance of 23 ms for as long as the key on the remote control is held down.
+#define JVC_REPEAT_PERIOD     65000 // assume around 40 ms for a JVC frame. JVC IR Remotes: RM-SA911U, RM-SX463U have 45 ms period
+/***************************************************************************/
+/*					   		DEFINE FOR SAMSUNG				   			   */
+/***************************************************************************/
+#define SAMSUNG_ADDRESS_BITS        16
+#define SAMSUNG_COMMAND16_BITS      16
+#define SAMSUNG_COMMAND32_BITS      32
+#define SAMSUNG_BITS                (SAMSUNG_ADDRESS_BITS + SAMSUNG_COMMAND16_BITS)
+#define SAMSUNG48_BITS              (SAMSUNG_ADDRESS_BITS + SAMSUNG_COMMAND32_BITS)
+
+// except SAMSUNG_HEADER_MARK, values are like NEC
+#define SAMSUNG_UNIT                560             // 21.28 periods of 38 kHz, 11.2 ticks TICKS_LOW = 8.358 TICKS_HIGH = 15.0
+#define SAMSUNG_HEADER_MARK         (8 * SAMSUNG_UNIT) // 4500 | 180
+#define SAMSUNG_HEADER_SPACE        (8 * SAMSUNG_UNIT) // 4500
+#define SAMSUNG_BIT_MARK            SAMSUNG_UNIT
+#define SAMSUNG_ONE_SPACE           (3 * SAMSUNG_UNIT) // 1690 | 33.8  TICKS_LOW = 25.07 TICKS_HIGH = 45.0
+#define SAMSUNG_ZERO_SPACE          SAMSUNG_UNIT
+
+#define SAMSUNG_AVERAGE_DURATION    55000 // SAMSUNG_HEADER_MARK + SAMSUNG_HEADER_SPACE  + 32 * 2,5 * SAMSUNG_UNIT + SAMSUNG_UNIT // 2.5 because we assume more zeros than ones
+#define SAMSUNG_REPEAT_DURATION     (SAMSUNG_HEADER_MARK  + SAMSUNG_HEADER_SPACE + SAMSUNG_BIT_MARK + SAMSUNG_ZERO_SPACE + SAMSUNG_BIT_MARK)
+#define SAMSUNG_REPEAT_PERIOD       110000 // Commands are repeated every 110 ms (measured from start to start) for as long as the key on the remote control is held down.
+#define SAMSUNG_REPEAT_DISTANCE     (SAMSUNG_REPEAT_PERIOD - SAMSUNG_AVERAGE_DURATION)
+#define SAMSUNG_MAXIMUM_REPEAT_DISTANCE     (SAMSUNG_REPEAT_DISTANCE + (SAMSUNG_REPEAT_DISTANCE / 4)) // Just a guess
+/***************************************************************************/
+/*					   	DEFINE FOR BANGOLUFSEN				   			   */
+/***************************************************************************/
+#define BEO_DATA_BITS         8                // Command or character
+
+#define BEO_UNIT              3125             // All timings are in microseconds
+
+#define BEO_IR_MARK           200              // The length of a mark in the IR protocol
+#define BEO_DATALINK_MARK     (BEO_UNIT / 2)   // The length of a mark in the Datalink protocol
+
+#define BEO_PULSE_LENGTH_ZERO           BEO_UNIT      // The length of a one to zero transition
+#define BEO_PULSE_LENGTH_EQUAL          (2 * BEO_UNIT)   // 6250 The length of an equal bit
+#define BEO_PULSE_LENGTH_ONE            (3 * BEO_UNIT)   // 9375 The length of a zero to one transition
+#define BEO_PULSE_LENGTH_TRAILING_BIT   (4 * BEO_UNIT)   // 12500 The length of the stop bit
+#define BEO_PULSE_LENGTH_START_BIT      (5 * BEO_UNIT)   // 15625 The length of the start bit
+/***************************************************************************/
+/*					   			DEFINE FOR FAST				   			   */
+/***************************************************************************/
+#define FAST_KHZ                  38
+#define FAST_ADDRESS_BITS          0 // No address
+#define FAST_COMMAND_BITS         16 // Command and inverted command (parity)
+#define FAST_BITS                 (FAST_ADDRESS_BITS + FAST_COMMAND_BITS)
+
+#define FAST_UNIT                 526 // 20 periods of 38 kHz (526.315789)
+
+#define FAST_BIT_MARK             FAST_UNIT
+#define FAST_ONE_SPACE            (3 * FAST_UNIT)     // 1578 -> bit period = 2104
+#define FAST_ZERO_SPACE           FAST_UNIT           //  526 -> bit period = 1052
+
+#define FAST_HEADER_MARK          (4 * FAST_UNIT)     // 2104
+#define FAST_HEADER_SPACE         (2 * FAST_UNIT)     // 1052
+
+#define FAST_REPEAT_PERIOD        50000 // Commands are repeated every 50 ms (measured from start to start) for as long as the key on the remote control is held down.
+#define FAST_REPEAT_DISTANCE      (FAST_REPEAT_PERIOD - (55 * FAST_UNIT)) // 19 ms
+#define FAST_MAXIMUM_REPEAT_DISTANCE (FAST_REPEAT_DISTANCE + 10000) // 29 ms
+/***************************************************************************/
+/*					   		DEFINE FOR WHYNTER				   			   */
+/***************************************************************************/
+#define WHYNTER_BITS            32
+#define WHYNTER_HEADER_MARK   2850
+#define WHYNTER_HEADER_SPACE  2850
+#define WHYNTER_BIT_MARK       750
+#define WHYNTER_ONE_SPACE     2150
+#define WHYNTER_ZERO_SPACE     750
+/***************************************************************************/
+/*					   			DEFINE FOR LEGO				   			   */
+/***************************************************************************/
+#define LEGO_CHANNEL_BITS       4
+#define LEGO_MODE_BITS          4
+#define LEGO_COMMAND_BITS       4
+#define LEGO_PARITY_BITS        4
+
+#define LEGO_BITS               (LEGO_CHANNEL_BITS + LEGO_MODE_BITS + LEGO_COMMAND_BITS + LEGO_PARITY_BITS)
+
+#define LEGO_HEADER_MARK        158    //  6 cycles
+#define LEGO_HEADER_SPACE       1026   // 39 cycles
+
+#define LEGO_BIT_MARK           158    //  6 cycles
+#define LEGO_ONE_SPACE          553    // 21 cycles
+#define LEGO_ZERO_SPACE         263    // 10 cycles
+
+#define LEGO_AVERAGE_DURATION   11000 // LEGO_HEADER_MARK + LEGO_HEADER_SPACE  + 16 * 600 + 158
+
+#define LEGO_AUTO_REPEAT_PERIOD_MIN 110000 // Every frame is auto repeated 5 times.
+#define LEGO_AUTO_REPEAT_PERIOD_MAX 230000 // space for channel 3
+
+#define LEGO_MODE_EXTENDED  0
+#define LEGO_MODE_COMBO     1
+#define LEGO_MODE_SINGLE    0x4 // here the 2 LSB have meanings like Output A / Output B
+/***************************************************************************/
+/*					   		DEFINE FOR BOSEWAVE				   			   */
+/***************************************************************************/
+#define BOSEWAVE_BITS             16 // Command and inverted command
+
+#define BOSEWAVE_HEADER_MARK    1014    // 1014 are 39 clock periods (I counted 3 times!)
+#define BOSEWAVE_HEADER_SPACE   1468    // 1468(measured), 1456 are 56 clock periods
+#define BOSEWAVE_BIT_MARK        520    // 520 are 20 clock periods
+#define BOSEWAVE_ZERO_SPACE      468    // 468 are 18 clock periods
+#define BOSEWAVE_ONE_SPACE      1468    // 1468(measured), 1456 are 56 clock periods
+
+#define BOSEWAVE_REPEAT_PERIOD              75000
+#define BOSEWAVE_REPEAT_DISTANCE            50000
+#define BOSEWAVE_MAXIMUM_REPEAT_DISTANCE    62000
+/***************************************************************************/
+/*					   		DEFINE FOR MAGIQUEST				   		   */
+/***************************************************************************/
+#define MAGIQUEST_CHECKSUM_BITS     8   // magiquest_t.cmd.checksum
+#define MAGIQUEST_MAGNITUDE_BITS    9   // magiquest_t.cmd.magnitude
+#define MAGIQUEST_WAND_ID_BITS     31   // magiquest_t.cmd.wand_id -> wand-id is handled as 32 bit and always even
+#define MAGIQUEST_START_BITS        8    // magiquest_t.cmd.StartBits
+
+#define MAGIQUEST_PERIOD         1150   // Time for a full MagiQuest "bit" (1100 - 1200 usec)
+
+#define MAGIQUEST_DATA_BITS     (MAGIQUEST_CHECKSUM_BITS + MAGIQUEST_MAGNITUDE_BITS + MAGIQUEST_WAND_ID_BITS) // 48 Size of the command without the start bits
+#define MAGIQUEST_BITS          (MAGIQUEST_CHECKSUM_BITS + MAGIQUEST_MAGNITUDE_BITS + MAGIQUEST_WAND_ID_BITS + MAGIQUEST_START_BITS) // 56 Size of the command with the start bits
+
+#define MAGIQUEST_UNIT          (MAGIQUEST_PERIOD / 4) // 287.5
+
+#define MAGIQUEST_ONE_MARK      (2 * MAGIQUEST_UNIT) // 576
+#define MAGIQUEST_ONE_SPACE     (2 * MAGIQUEST_UNIT) // 576
+#define MAGIQUEST_ZERO_MARK     MAGIQUEST_UNIT       // 287.5
+#define MAGIQUEST_ZERO_SPACE    (3 * MAGIQUEST_UNIT) // 864
 /***************************************************************************/
 /*					   			END OF DEFINE							   */
 /***************************************************************************/

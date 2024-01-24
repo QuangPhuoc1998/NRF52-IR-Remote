@@ -154,6 +154,10 @@ void Mid_IrRemoteInit(void)
 	nrf_gpio_cfg_input(PIN_IR_RECEIVE_CUSTOM, NRF_GPIO_PIN_NOPULL);
 
 	nrf_gpio_cfg_output(PIN_IR_TRANSMIT);
+	nrf_gpio_pin_clear(PIN_IR_TRANSMIT);
+//	nrf_gpio_cfg_output(PIN_IR_RECEIVER_POWER_CONTROL);
+//	nrf_gpio_pin_set(PIN_IR_RECEIVER_POWER_CONTROL);
+
 
 	Ir_RemoteResume();
 }
@@ -203,15 +207,94 @@ bool Mid_IrRemoteDecode(void)
         return true;
     }
     // Attempting Denon/Sharp decode
-	if (decodeDenon()) {
+	if (decodeDenon())
+	{
 		return true;
 	}
+    //Attempting Sony decode
+    if (decodeSony())
+    {
+        return true;
+    }
+    // Attempting RC5 decode
+    if (decodeRC5())
+    {
+        return true;
+    }
+    //Attempting RC6 decode
+    if (decodeRC6())
+    {
+        return true;
+    }
+    //Attempting LG decode
+    if (decodeLG())
+    {
+        return true;
+    }
+    //Attempting JVC decode
+    if (decodeJVC())
+    {
+        return true;
+    }
+    //Attempting Samsung decode
+    if (decodeSamsung())
+    {
+        return true;
+    }
+    /*
+     * Start of the exotic protocols
+     */
+#if defined(DECODE_BEO)
+    //Attempting Bang & Olufsen decode;
+    if (decodeBangOlufsen()) {
+        return true;
+    }
+#endif
+
+    //Attempting FAST decode
+    if (decodeFAST())
+    {
+        return true;
+    }
+    //Attempting Whynter decode
+    if (decodeWhynter())
+    {
+        return true;
+    }
+    //Attempting Lego Power Functions
+    if (decodeLegoPowerFunctions())
+    {
+        return true;
+    }
+    //Attempting Bosewave  decode
+    if (decodeBoseWave())
+    {
+        return true;
+    }
+    //Attempting MagiQuest decode
+    if (decodeMagiQuest())
+    {
+        return true;
+    }
+    /*
+     * Try the universal decoder for pulse distance protocols
+     */
     //Attempting universal Distance Width decode
     if (decodeDistanceWidth())
     {
         return true;
     }
-
+    /*
+     * Last resort is the universal hash decode which always return true
+     */
+    //Hash decode
+    // decodeHash returns a hash on any input.
+    // Thus, it needs to be last in the list.
+    // If you add any decodes, add them before this.
+    if (decodeHash())
+    {
+        return true;
+    }
     return true;
 }
 
@@ -591,6 +674,57 @@ void sendPulseDistanceWidthDataV1(uint16_t aOneMarkMicros, uint16_t aOneSpaceMic
 #if defined(LOCAL_TRACE)
     Serial.println();
 #endif
+}
+
+/**
+ * Sends Biphase data MSB first
+ * Always send start bit, do not send the trailing space of the start bit
+ * 0 -> mark+space
+ * 1 -> space+mark
+ * The output always ends with a space
+ * can only send 31 bit data, since we put the start bit as 32th bit on front
+ */
+void sendBiphaseData(uint16_t aBiphaseTimeUnit, uint32_t aData, uint8_t aNumberOfBits)
+{
+#if defined(LOCAL_TRACE)
+    Serial.print('S');
+#endif
+
+// Data - Biphase code MSB first
+// prepare for start with sending the start bit, which is 1
+    uint32_t tMask = 1UL << aNumberOfBits;    // mask is now set for the virtual start bit
+    uint8_t tLastBitValue = 1;    // Start bit is a 1
+    bool tNextBitIsOne = 1;    // Start bit is a 1
+    for (uint_fast8_t i = aNumberOfBits + 1; i > 0; i--)
+    {
+        bool tCurrentBitIsOne = tNextBitIsOne;
+        tMask >>= 1;
+        tNextBitIsOne = ((aData & tMask) != 0) || (i == 1); // true for last bit to avoid extension of mark
+        if (tCurrentBitIsOne)
+        {
+#if defined(LOCAL_TRACE)
+            Serial.print('1');
+#endif
+            space(aBiphaseTimeUnit);
+            if (tNextBitIsOne) {
+                mark(aBiphaseTimeUnit);
+            } else {
+                // if next bit is 0, extend the current mark in order to generate a continuous signal without short breaks
+                mark(2 * aBiphaseTimeUnit);
+            }
+            tLastBitValue = 1;
+
+        } else {
+#if defined(LOCAL_TRACE)
+            Serial.print('0');
+#endif
+            if (!tLastBitValue) {
+                mark(aBiphaseTimeUnit);
+            }
+            space(aBiphaseTimeUnit);
+            tLastBitValue = 0;
+        }
+    }
 }
 
 void Ir_RemoteInitDecodedIRData(void)
@@ -1151,3 +1285,116 @@ bool decodePulseDistanceWidthDatav3(PulseDistanceWidthProtocolConstants *aProtoc
             aProtocolConstants->DistanceWidthTimingInfo.ZeroSpaceMicros, aProtocolConstants->Flags);
 }
 
+/*
+ * Static variables for the getBiphaselevel function
+ */
+uint8_t sBiphaseDecodeRawbuffOffset; // Index into raw timing array
+uint16_t sBiphaseCurrentTimingIntervals; // 1, 2 or 3. Number of aBiphaseTimeUnit intervals of the current rawbuf[sBiphaseDecodeRawbuffOffset] timing.
+uint8_t sBiphaseUsedTimingIntervals;       // Number of already used intervals of sCurrentTimingIntervals.
+uint16_t sBiphaseTimeUnit;
+
+void initBiphaselevel(uint8_t aRCDecodeRawbuffOffset, uint16_t aBiphaseTimeUnit)
+{
+    sBiphaseDecodeRawbuffOffset = aRCDecodeRawbuffOffset;
+    sBiphaseTimeUnit = aBiphaseTimeUnit;
+    sBiphaseUsedTimingIntervals = 0;
+}
+
+/**
+ * Gets the level of one time interval (aBiphaseTimeUnit) at a time from the raw buffer.
+ * The RC5/6 decoding is easier if the data is broken into time intervals.
+ * E.g. if the buffer has mark for 2 time intervals and space for 1,
+ * successive calls to getBiphaselevel will return 1, 1, 0.
+ *
+ *               _   _   _   _   _   _   _   _   _   _   _   _   _
+ *         _____| |_| |_| |_| |_| |_| |_| |_| |_| |_| |_| |_| |_| |
+ *                ^   ^   ^   ^   ^   ^   ^   ^   ^   ^   ^   ^   ^    Significant clock edge
+ *               _     _   _   ___   _     ___     ___   _   - Mark
+ * Data    _____| |___| |_| |_|   |_| |___|   |___|   |_| |  - Data starts with a mark->space bit
+ *                1   0   0   0   1   1   0   1   0   1   1  - Space
+ * A mark to space at a significant clock edge results in a 1
+ * A space to mark at a significant clock edge results in a 0 (for RC6)
+ * Returns current level [MARK or SPACE] or -1 for error (measured time interval is not a multiple of sBiphaseTimeUnit).
+ */
+uint8_t getBiphaselevel(void)
+{
+	uint8_t tLevelOfCurrentInterval; // 0 (SPACE) or 1 (MARK)
+
+    if (sBiphaseDecodeRawbuffOffset >= decodedIRData.rawDataPtr->rawlen)
+    {
+        return SPACE;  // After end of recorded buffer, assume space.
+    }
+
+    tLevelOfCurrentInterval = (sBiphaseDecodeRawbuffOffset) & 1; // on odd rawbuf offsets we have mark timings
+
+    /*
+     * Setup data if sUsedTimingIntervals is 0
+     */
+    if (sBiphaseUsedTimingIntervals == 0) {
+        uint16_t tCurrentTimingWith = decodedIRData.rawDataPtr->rawbuf[sBiphaseDecodeRawbuffOffset];
+        uint16_t tMarkExcessCorrection = (tLevelOfCurrentInterval == MARK) ? MARK_EXCESS_MICROS : -MARK_EXCESS_MICROS;
+
+        if (matchTicks(tCurrentTimingWith, sBiphaseTimeUnit + tMarkExcessCorrection)) {
+            sBiphaseCurrentTimingIntervals = 1;
+        } else if (matchTicks(tCurrentTimingWith, (2 * sBiphaseTimeUnit) + tMarkExcessCorrection)) {
+            sBiphaseCurrentTimingIntervals = 2;
+        } else if (matchTicks(tCurrentTimingWith, (3 * sBiphaseTimeUnit) + tMarkExcessCorrection)) {
+            sBiphaseCurrentTimingIntervals = 3;
+        } else {
+            return -1;
+        }
+    }
+
+// We use another interval from tCurrentTimingIntervals
+    sBiphaseUsedTimingIntervals++;
+
+// keep track of current timing offset
+    if (sBiphaseUsedTimingIntervals >= sBiphaseCurrentTimingIntervals)
+    {
+        // we have used all intervals of current timing, switch to next timing value
+        sBiphaseUsedTimingIntervals = 0;
+        sBiphaseDecodeRawbuffOffset++;
+    }
+
+    return tLevelOfCurrentInterval;
+}
+
+#define FNV_PRIME_32 16777619   ///< used for decodeHash()
+#define FNV_BASIS_32 2166136261 ///< used for decodeHash()
+
+uint8_t compare(uint16_t oldval, uint16_t newval)
+{
+    if (newval * 10 < oldval * 8) {
+        return 0;
+    }
+    if (oldval * 10 < newval * 8) {
+        return 2;
+    }
+    return 1;
+}
+
+bool decodeHash(void)
+{
+    unsigned long hash = FNV_BASIS_32; // the result is the same no matter if we use a long or unsigned long variable
+
+// Require at least 6 samples to prevent triggering on noise
+    if (decodedIRData.rawDataPtr->rawlen < 6) {
+        return false;
+    }
+#if RAW_BUFFER_LENGTH <= 254        // saves around 75 bytes program memory and speeds up ISR
+    uint_fast8_t i;
+#else
+    unsigned int i;
+#endif
+    for (i = 1; (i + 2) < decodedIRData.rawDataPtr->rawlen; i++) {
+        uint_fast8_t value = compare(decodedIRData.rawDataPtr->rawbuf[i], decodedIRData.rawDataPtr->rawbuf[i + 2]);
+        // Add value into the hash
+        hash = (hash * FNV_PRIME_32) ^ value;
+    }
+
+    decodedIRData.decodedRawData = hash;
+    decodedIRData.numberOfBits = 32;
+    decodedIRData.protocol = UNKNOWN;
+
+    return true;
+}

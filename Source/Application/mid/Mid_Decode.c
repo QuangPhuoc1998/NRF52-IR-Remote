@@ -76,7 +76,7 @@ void Mid_DecodeTimeBasedScheduling(void *pData, uint16_t len)
         }
         else if(ubNumOfCompenent == 3)
         {
-            tIRDataTrigger.ubMode = MOTION__TRIGGER;
+            tIRDataTrigger.ubMode = MOTION_TRIGGER;
         }
         else
         {
@@ -254,7 +254,7 @@ bool Mid_InsertNewIRTrigger(IrDataTrigger_t * tIRDataTrigger)
     }
     for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
     {
-        if(g_atIRDataTrigger[i].ubMode != MOTION__TRIGGER &&
+        if(g_atIRDataTrigger[i].ubMode != MOTION_TRIGGER &&
 			g_atIRDataTrigger[i].ubMode != ONE_TRIGGER &&
 			g_atIRDataTrigger[i].ubMode != WINDOW_TRIGGER &&
 			g_atIRDataTrigger[i].ubMode != TIMEOUT_TRIGGER)

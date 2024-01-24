@@ -12,8 +12,14 @@
 /***************************************************************************/
 void App_ControlHandle(void);
 void App_ControlStartLearnIR(uint16_t uwIrID);
-void App_ControlStartEmitIR(uint16_t uwIrID);
+void App_ControlStartEmitIR(void *pData, uint16_t len);
+void App_ControlStartEmitIRWithID(void *pData, uint16_t len);
 void App_ControlEraseIR(uint16_t uwIrID);
+/***************************************************************************/
+/*					   	HEADER FOR APP ALARM							   */
+/***************************************************************************/
+void App_AlarmInit(void);
+void App_AlarmOnTimeHandler(void);
 /***************************************************************************/
 /*					   	HEADER FOR MID IR REMOTE						   */
 /***************************************************************************/
@@ -59,6 +65,7 @@ void sendPulseDistanceWidthDataV2(uint16_t aOneMarkMicros, uint16_t aOneSpaceMic
 void sendPulseDistanceWidthDataV1(uint16_t aOneMarkMicros, uint16_t aOneSpaceMicros, uint16_t aZeroMarkMicros,
         uint16_t aZeroSpaceMicros, IRRawDataType aData, uint8_t aNumberOfBits, uint8_t aFlags);
 
+void sendBiphaseData(uint16_t aBiphaseTimeUnit, uint32_t aData, uint8_t aNumberOfBits);
 bool matchTicks(uint16_t aMeasuredTicks, uint16_t aMatchValueMicros);
 bool MATCH(uint16_t measured_ticks, uint16_t desired_us);
 bool matchMark(uint16_t aMeasuredTicks, uint16_t aMatchValueMicros);
@@ -72,18 +79,94 @@ bool decodePulseDistanceWidthData(uint8_t aNumberOfBits, uint8_t aStartOffset, u
         uint16_t aZeroMarkMicros, uint16_t aOneSpaceMicros, uint16_t aZeroSpaceMicros, bool aMSBfirst) ;
 bool decodePulseDistanceWidthDatav2(PulseDistanceWidthProtocolConstants *aProtocolConstants, uint8_t aNumberOfBits, uint8_t aStartOffset);
 bool decodePulseDistanceWidthDatav3(PulseDistanceWidthProtocolConstants *aProtocolConstants, uint8_t aNumberOfBits);
+
+void initBiphaselevel(uint8_t aRCDecodeRawbuffOffset, uint16_t aBiphaseTimeUnit);
+uint8_t getBiphaselevel(void);
+
+uint8_t compare(uint16_t oldval, uint16_t newval);
+bool decodeHash(void);
 /***************************************************************************/
-/*					   		HEADER FOR KASEIKYO							   */
+/*					   		HEADER FOR DENON							   */
 /***************************************************************************/
 void sendSharp(uint8_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
 void sendDenon(uint8_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats, bool aSendSharp);
-bool decodeSharp();
-bool decodeDenon();
+bool decodeSharp(void);
+bool decodeDenon(void);
 /***************************************************************************/
 /*					   		HEADER FOR KASEIKYO							   */
 /***************************************************************************/
-bool decodeKaseikyo();
+bool decodeKaseikyo(void);
 void sendKaseikyo(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats, uint16_t aVendorCode);
+/***************************************************************************/
+/*					   			HEADER FOR SONY					           */
+/***************************************************************************/
+bool decodeSony(void);
+void sendSony(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats, uint8_t numberOfBits);
+/***************************************************************************/
+/*					   		HEADER FOR RC5 C6					           */
+/***************************************************************************/
+bool decodeRC5(void);
+void sendRC5(uint8_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats, bool aEnableAutomaticToggle);
+bool decodeRC6(void);
+void sendRC6With32Bit(uint32_t aRawData, uint8_t aNumberOfBitsToSend);
+void sendRC6RawWith32Bit(uint32_t aRawData, uint8_t aNumberOfBitsToSend);
+void sendRC6With64Bit(uint64_t aRawData, uint8_t aNumberOfBitsToSend);
+void sendRC6RawWith64Bit(uint64_t aRawData, uint8_t aNumberOfBitsToSend);
+void sendRC6(uint8_t aAddress, uint8_t aCommand, int_fast8_t aNumberOfRepeats, bool aEnableAutomaticToggle);
+/***************************************************************************/
+/*					   			HEADER FOR LG					           */
+/***************************************************************************/
+void sendLG2Repeat(void);
+void sendLG2SpecialRepeat(void);
+uint32_t computeLGRawDataAndChecksum(uint8_t aAddress, uint16_t aCommand);
+void sendLG(uint8_t aAddress, uint16_t aCommand, uint8_t aNumberOfRepeats);
+void sendLG2(uint8_t aAddress, uint16_t aCommand, uint8_t aNumberOfRepeats);
+bool decodeLG(void);
+/***************************************************************************/
+/*					   			HEADER FOR JVC					           */
+/***************************************************************************/
+void sendJVC(uint8_t aAddress, uint8_t aCommand, int_fast8_t aNumberOfRepeats);
+bool decodeJVC(void);
+/***************************************************************************/
+/*					   		HEADER FOR SAMSUNG					           */
+/***************************************************************************/
+void sendSamsungLGRepeat();
+void sendSamsungLGSpecialRepeat();
+void sendSamsungLG(uint16_t aAddress, uint16_t aCommand, uint8_t aNumberOfRepeats);
+void sendSamsung(uint16_t aAddress, uint16_t aCommand, uint8_t aNumberOfRepeats);
+void sendSamsung48(uint16_t aAddress, uint32_t aCommand, uint8_t aNumberOfRepeats);
+bool decodeSamsung(void);
+/***************************************************************************/
+/*					   		HEADER FOR BANGOLUFSEN					       */
+/***************************************************************************/
+void sendBangOlufsen(uint16_t aHeader, uint8_t aData, uint8_t aNumberOfRepeats, int8_t aNumberOfHeaderBits);
+void sendBangOlufsenDataLink(uint32_t aHeader, uint8_t aData, uint8_t aNumberOfRepeats, int8_t aNumberOfHeaderBits);
+/***************************************************************************/
+/*					   		HEADER FOR FAST							       */
+/***************************************************************************/
+void sendFAST(uint8_t aCommand, uint8_t aNumberOfRepeats);
+bool decodeFAST(void);
+/***************************************************************************/
+/*					   	HEADER FOR WHYNTER							       */
+/***************************************************************************/
+void sendWhynter(uint32_t aData, uint8_t aNumberOfBitsToSend);
+bool decodeWhynter(void);
+/***************************************************************************/
+/*					   		HEADER FOR LEGO							       */
+/***************************************************************************/
+void sendLegoPowerFunctions(uint8_t aChannel, uint8_t aCommand, uint8_t aMode, bool aDoSend5Times);
+void sendLegoPowerFunctionsV2(uint16_t aRawData, uint8_t aChannel, bool aDoSend5Times);
+bool decodeLegoPowerFunctions(void);
+/***************************************************************************/
+/*					   		HEADER FOR BOSEWAVE							   */
+/***************************************************************************/
+void sendBoseWave(uint8_t aCommand, uint8_t aNumberOfRepeats);
+bool decodeBoseWave(void);
+/***************************************************************************/
+/*					   		HEADER FOR MAGIQUEST						   */
+/***************************************************************************/
+void sendMagiQuest(uint32_t aWandId, uint16_t aMagnitude);
+bool decodeMagiQuest(void);
 /***************************************************************************/
 /*					   		HEADER FOR PULSE DISTANCE					   */
 /***************************************************************************/
@@ -95,15 +178,22 @@ bool decodeDistanceWidth();
 void sendNECRepeat(void);
 void sendNECSpecialRepeat(void);
 bool decodeNec(void);
+uint32_t computeNECRawDataAndChecksum(uint16_t aAddress, uint16_t aCommand);
+void sendNEC(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
+void sendNEC2(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
+void sendOnkyo(uint16_t aAddress, uint16_t aCommand, uint8_t aNumberOfRepeats);
+void sendApple(uint8_t aDeviceId, uint8_t aCommand, uint8_t aNumberOfRepeats);
+void sendNECRaw(uint32_t aRawData, uint8_t aNumberOfRepeats);
 /***************************************************************************/
 /*					   		HEADER FOR IR SEND							   */
 /***************************************************************************/
-void Mid_IrSendCommon(IRData * tIrDataToSend);
+void Mid_IrSendCommon(IRData * tIrDataToSend, uint8_t aNumberOfRepeats);
 
 void Mid_IrSendPanasonic(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
 void Mid_IrSendKaseikyo_Denon(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
-void Mid_IeSendKaseikyo_Mitsubishi(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
+void Mid_IrSendKaseikyo_Mitsubishi(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
 void Mid_IrSendKaseikyo_Sharp(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
+void sendKaseikyo_Sharp(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
 void Mid_IrSendKaseikyo_JVC(uint16_t aAddress, uint8_t aCommand, uint8_t aNumberOfRepeats);
 
 void Mid_IrSendPulseDistance(IRData * tIRDataToSend);
@@ -167,5 +257,6 @@ bool ConvertStringToHex32Bit(uint8_t * pData, uint8_t len, uint32_t * ulResult);
 uint64_t ConvertStringToTimeStamp(uint8_t * pData, uint8_t len);
 uint8_t is_delim(char c, char *delim);
 char * my_strtok(char *srcString, char *delim);
+uint16_t ConvertArrayToNumber(uint8_t * pData, uint8_t ubLen);
 
 #endif // _OP_HEADER_FUNCTION_H_

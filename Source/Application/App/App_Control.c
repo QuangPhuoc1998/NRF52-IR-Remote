@@ -2,7 +2,6 @@
 
 const char * c_ubProtocolName[PROCOTL_LEN] = PROTOCOLNAME;
 static uint16_t uwBufferLearnID = CLEAR;
-static uint16_t uwBufferEmitID = CLEAR;
 static uint16_t uwBufferEraseID = CLEAR;
 void App_ControlHandle(void)
 {
@@ -33,23 +32,7 @@ void App_ControlHandle(void)
 
 	if(APP_START_EMIT_IR_FLAG == C_ON)
 	{
-		int16_t ubIndex = LinearSerachID(t_IRDataCommom, MAX_IR_CODE, uwBufferEmitID);
-		if(ubIndex != -1)
-		{
-			NRF_LOG_INFO("/*--- Emit IR code ---*/")
-			NRF_LOG_INFO("ID = %d", t_IRDataCommom[ubIndex].uwID);
-			NRF_LOG_INFO("Protocol = %s", c_ubProtocolName[t_IRDataCommom[ubIndex].IRData.protocol]);
-			NRF_LOG_INFO("Address = %d", t_IRDataCommom[ubIndex].IRData.address);
-			NRF_LOG_INFO("Command = %d", t_IRDataCommom[ubIndex].IRData.command);
-			NRF_LOG_INFO("Number of bit = %d", t_IRDataCommom[ubIndex].IRData.numberOfBits);
-			NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[ubIndex].IRData.decodedRawData);
 
-			Mid_IrSendCommon(&t_IRDataCommom[ubIndex].IRData);
-		}
-		else
-		{
-			NRF_LOG_INFO("Can't find IR code");
-		}
 		APP_START_EMIT_IR_FLAG = C_OFF;
 	}
 
@@ -99,10 +82,48 @@ void App_ControlStartLearnIR(uint16_t uwIrID)
 	uwBufferLearnID = uwIrID;
 }
 
-void App_ControlStartEmitIR(uint16_t uwIrID)
+void App_ControlStartEmitIR(void *pData, uint16_t len)
 {
-	APP_START_EMIT_IR_FLAG = C_ON;
-	uwBufferEmitID = uwIrID;
+	uint16_t uwBufferEmitID = ConvertID(pData, len);
+	int16_t ubIndex = LinearSerachID(t_IRDataCommom, MAX_IR_CODE, uwBufferEmitID);
+	if(ubIndex != -1)
+	{
+		NRF_LOG_INFO("/*--- Emit IR code ---*/")
+		NRF_LOG_INFO("ID = %d", t_IRDataCommom[ubIndex].uwID);
+		NRF_LOG_INFO("Protocol = %s", c_ubProtocolName[t_IRDataCommom[ubIndex].IRData.protocol]);
+		NRF_LOG_INFO("Address = %d", t_IRDataCommom[ubIndex].IRData.address);
+		NRF_LOG_INFO("Command = %d", t_IRDataCommom[ubIndex].IRData.command);
+		NRF_LOG_INFO("Number of bit = %d", t_IRDataCommom[ubIndex].IRData.numberOfBits);
+		NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[ubIndex].IRData.decodedRawData);
+
+		Mid_IrSendCommon(&t_IRDataCommom[ubIndex].IRData, 1);
+	}
+	else
+	{
+		NRF_LOG_INFO("Can't find IR code");
+	}
+}
+
+void App_ControlStartEmitIRWithID(void *pData, uint16_t len)
+{
+	uint16_t uwBufferEmitID = ConvertArrayToNumber(pData, len);
+	int16_t ubIndex = LinearSerachID(t_IRDataCommom, MAX_IR_CODE, uwBufferEmitID);
+	if(ubIndex != -1)
+	{
+		NRF_LOG_INFO("/*--- Emit IR code ---*/")
+		NRF_LOG_INFO("ID = %d", t_IRDataCommom[ubIndex].uwID);
+		NRF_LOG_INFO("Protocol = %s", c_ubProtocolName[t_IRDataCommom[ubIndex].IRData.protocol]);
+		NRF_LOG_INFO("Address = %d", t_IRDataCommom[ubIndex].IRData.address);
+		NRF_LOG_INFO("Command = %d", t_IRDataCommom[ubIndex].IRData.command);
+		NRF_LOG_INFO("Number of bit = %d", t_IRDataCommom[ubIndex].IRData.numberOfBits);
+		NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[ubIndex].IRData.decodedRawData);
+
+		Mid_IrSendCommon(&t_IRDataCommom[ubIndex].IRData, 1);
+	}
+	else
+	{
+		NRF_LOG_INFO("Can't find IR code");
+	}
 }
 
 void App_ControlEraseIR(uint16_t uwIrID)

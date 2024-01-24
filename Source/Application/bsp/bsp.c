@@ -46,8 +46,8 @@ void bsp_init(void)
 	NRF_P0->OUTSET = (1 << PIN_BLUE_LED);     // set high to turn off the LED
 	NRF_P0->PIN_CNF[PIN_BLUE_LED] = 0x3;      // make this GPIO an output
 
-	NRF_P0->OUTSET = (1 << PIN_IR_RECEIVER_POWER_CONTROL);  // set high to turn off the IR receiver
-	NRF_P0->PIN_CNF[PIN_IR_RECEIVER_POWER_CONTROL] = 0x3;   // make this GPIO an output
+//	NRF_P0->OUTSET = (1 << PIN_IR_RECEIVER_POWER_CONTROL);  // set high to turn off the IR receiver
+//	NRF_P0->PIN_CNF[PIN_IR_RECEIVER_POWER_CONTROL] = 0x3;   // make this GPIO an output
 
 //	NRF_P0->OUTCLR = (1 << PIN_IR_TRANSMIT); // make sure that the IR LED is off initially
 //	NRF_P0->PIN_CNF[PIN_IR_TRANSMIT] = 0x3;  // make this GPIO an output

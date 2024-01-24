@@ -72,7 +72,7 @@ static void on_write(ble_cus_t * p_cus, ble_evt_t const * p_ble_evt)
     	NRF_LOG_INFO("Len: %d",p_evt_write->len);
     	NRF_LOG_INFO("Raw: 0x%X 0x%X",p_evt_write->data[0], p_evt_write->data[1]);
     	NRF_LOG_INFO("ID: %d",ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
-    	App_ControlStartEmitIR(ConvertID((uint8_t *)p_evt_write->data, p_evt_write->len));
+    	app_sched_event_put(p_evt_write->data, p_evt_write->len, App_ControlStartEmitIR);
 	}
     else if(p_evt_write->handle == g_ubValueHandle[CUS_UUID_IR_ERASE_INDEX])
 	{
