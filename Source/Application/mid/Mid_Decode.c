@@ -20,6 +20,7 @@ void Mid_DecodeCommand(uint8_t ubCommandIndex, uint8_t * pData, uint8_t len)
     }
     case CUS_UUID_MOT_SENS_INDEX:
     {
+    	ConvertCharToHex(*pData, &g_ubMotionSensTemp);
         break;
     }
     case CUS_UUID_MOT_TOUT_INDEX:
@@ -62,6 +63,11 @@ void Mid_DecodeTimeBasedScheduling(void *pData, uint16_t len)
         if(ubNumOfCompenent == 6)
         {
             tIRDataTrigger.ubMode = WINDOW_TRIGGER;
+            if(tIRDataTrigger.tTime2.ubMin == 0 && tIRDataTrigger.tTime2.ubHour == 0)
+            {
+            	tIRDataTrigger.tTime2.ubHour = 24;
+            	tIRDataTrigger.tTime2.ubMin = 0;
+            }
         }
         else if(ubNumOfCompenent == 5)
         {
@@ -82,8 +88,10 @@ void Mid_DecodeTimeBasedScheduling(void *pData, uint16_t len)
         {
         	// do nothing
         }
+
         if(ubCommand == CREATE_COMMAND)
         {
+        	NRF_LOG_INFO("Check motion sens 1: %d", tIRDataTrigger.ubMotionSen);
             Mid_InsertNewIRTrigger(&tIRDataTrigger);
         }
         else if(ubCommand == DELETE_COMMAND)
@@ -259,7 +267,14 @@ bool Mid_InsertNewIRTrigger(IrDataTrigger_t * tIRDataTrigger)
 			g_atIRDataTrigger[i].ubMode != WINDOW_TRIGGER &&
 			g_atIRDataTrigger[i].ubMode != TIMEOUT_TRIGGER)
         {
+            if(g_ubMotionSensTemp != 0xFF)
+            {
+            	tIRDataTrigger->ubMotionSen = ConvertSensitivityToLevel(g_ubMotionSensTemp);
+            	g_ubMotionSensTemp = 0xFF;
+            }
+        	NRF_LOG_INFO("Check motion sens 2: %d", tIRDataTrigger->ubMotionSen);
             myMemCpy(&g_atIRDataTrigger[i], tIRDataTrigger, sizeof(IrDataTrigger_t));
+#ifdef SHOW_DEBUG_DECODE
         	NRF_LOG_INFO("Insert new IR trigger");
         	NRF_LOG_INFO("Mode: %d", g_atIRDataTrigger[i].ubMode);
         	NRF_LOG_INFO("TrigID: %d", g_atIRDataTrigger[i].uwTrigID);
@@ -268,6 +283,8 @@ bool Mid_InsertNewIRTrigger(IrDataTrigger_t * tIRDataTrigger)
         	NRF_LOG_INFO("Time 1: %d:%d", g_atIRDataTrigger[i].tTime1.ubHour, g_atIRDataTrigger[i].tTime1.ubMin);
         	NRF_LOG_INFO("Time 2: %d:%d", g_atIRDataTrigger[i].tTime2.ubHour, g_atIRDataTrigger[i].tTime2.ubMin);
         	NRF_LOG_INFO("Time out: %d", g_atIRDataTrigger[i].ulTimeout);
+        	NRF_LOG_INFO("Motion Sens: %d", g_atIRDataTrigger[i].ubMotionSen);
+#endif
             g_ubIRTriggerCount++;
             Mid_FlashErase(IR_TRIG_START_ADDRESS, 1);
             Mid_FlashWrite(IR_TRIG_START_ADDRESS, g_atIRDataTrigger, SIZE_OF_IR_TRIG_VAR);
@@ -331,6 +348,7 @@ bool Mid_InsertNewIRCode(IRData * tIRData, uint16_t uwLearnID)
 			NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[g_ubIRCount].IRData.decodedRawDataArray[3]);
 			NRF_LOG_INFO("=> Saving IR code...");
 			NRF_LOG_INFO("=> Noti to app...");
+			lib_ble_noti(NOTI_LEARN_IR_SUCCESS);
 #endif
 			return true;
 		}

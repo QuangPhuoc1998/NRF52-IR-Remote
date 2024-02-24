@@ -236,6 +236,7 @@ typedef struct
 #define TIME_500MS_BY_100MS (5)
 #define TIME_300MS_BY_100MS (3)
 #define TIME_200MS_BY_100MS (2)
+#define TIME_100MS_BY_100MS (2)
 
 #define TIME_20MS_BY_10MS	(2)
 
@@ -469,6 +470,12 @@ enum
 #define CREATE_COMMAND  'c'
 #define DELETE_COMMAND  'd'
 
+#define TRIGGER_DONE_MASK	0xAA
+
+#define CONVERT_MIN_TO_SEC(min,sec)	((min*60)+sec)
+#define CONVERT_HOUR_TO_MIN(hour,min)	((hour*60)+min)
+#define CONVERT_HOUR_MIN_TO_SEC(hour,min,sec)	((((hour*60)+min)*60)+sec)
+
 enum
 {
     NONE,
@@ -507,6 +514,8 @@ typedef struct
     HourMin_t tTime1;
     HourMin_t tTime2;
     uint32_t ulTimeout;
+    uint8_t ubMotionSen;
+    uint8_t ubTriggerDone;
 } IrDataTrigger_t;
 
 typedef enum
@@ -536,13 +545,13 @@ enum
 /***************************************************************************/
 /*					   	DEFINE FOR MOTION SENSOR				   		   */
 /***************************************************************************/
-#define MOTION_SENSOR_SENSITIVITY_LEVEL_NONE	(2)
-#define MOTION_SENSOR_SENSITIVITY_LEVEL_0		(3)
-#define MOTION_SENSOR_SENSITIVITY_LEVEL_1		(6)
-#define MOTION_SENSOR_SENSITIVITY_LEVEL_2		(9)
-#define MOTION_SENSOR_SENSITIVITY_LEVEL_3		(12)
-#define MOTION_SENSOR_SENSITIVITY_LEVEL_4		(15)
-#define CONVERT_SENSITIVITY_TO_VALUE(Sensitivity)	(15-Sensitivity+1)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_NONE	(2 * 2)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_0		(3 * 2)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_1		(6 * 2)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_2		(9 * 2)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_3		(12 * 2)
+#define MOTION_SENSOR_SENSITIVITY_LEVEL_4		(15 * 2)
+#define CONVERT_SENSITIVITY_TO_VALUE(Sensitivity)	(30-(Sensitivity))
 
 enum
 {
@@ -863,6 +872,49 @@ enum
 #define MAGIQUEST_ONE_SPACE     (2 * MAGIQUEST_UNIT) // 576
 #define MAGIQUEST_ZERO_MARK     MAGIQUEST_UNIT       // 287.5
 #define MAGIQUEST_ZERO_SPACE    (3 * MAGIQUEST_UNIT) // 864
+/***************************************************************************/
+/*					   		DEFINE FOR LED CONTROL				   		   */
+/***************************************************************************/
+#define COLOR_RED_MASK      (1)
+#define COLOR_GREEN_MASK    (2)
+#define COLOR_BLUE_MASK     (4)
+#define LED_MODE_0_MASK     (0x00) // on/off one led
+#define LED_MODE_1_MASK     (0x08) // on/off two led alternate 1->2->3
+#define LED_MODE_2_MASK     (0x10) // on/off two led alternate 3->2->1
+#define LED_MODE_3_MASK     (0x18)
+
+#define TOTAL_LED_TYPE      (20)
+
+#define CONFIG_INDEX            (0)
+#define ON_TIME_INDEX           (1)
+#define OFF_TIME_INDEX          (2)
+#define CONTINUES_TIMESS_INDEX  (3)
+#define DEPLAY_TIME_INDEX       (4)
+
+#define COLOR_RED_BIT   (0)
+#define COLOR_GREEN_BIT (1)
+#define COLOR_BLUE_BIT  (2)
+
+#define LED_TYPE_OFF                (0)
+#define LED_TYPE_BLE_CONNECT        (1)
+#define LED_TYPE_BLE_DISCONNECT     (2)
+#define LED_TYPE_BLE_RECEIVE        (3)
+#define LED_TYPE_SEND_IR            (4)
+#define LED_TYPE_ERROR              (5)
+#define LED_TYPE_RESET              (6)
+#define LED_TYPE_MOTION_DETECT      (7)
+
+#define LED_STATE_ON    (1)
+#define LED_STATE_OFF   (2)
+#define LED_STATE_DELAY (3)
+/***************************************************************************/
+/*					   			DEFINE FOR NOTI							   */
+/***************************************************************************/
+#define NOTI_NOTHING			(0)
+#define NOTI_LEARN_IR_SUCCESS	(1)
+#define NOTI_LEARN_IR_FAIL		(2)
+#define NOTI_BATTERY_LOW		(3)
+#define NOTI_BATTERY_CHARGE		(4)
 /***************************************************************************/
 /*					   			END OF DEFINE							   */
 /***************************************************************************/

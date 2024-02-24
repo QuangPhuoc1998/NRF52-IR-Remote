@@ -233,3 +233,33 @@ uint16_t ConvertArrayToNumber(uint8_t * pData, uint8_t ubLen)
     }
     return ulResult;
 }
+
+uint8_t ConvertSensitivityToLevel(uint8_t ubSens)
+{
+	uint8_t Ret = CLEAR;
+	ubSens = CONVERT_SENSITIVITY_TO_VALUE(ubSens * 2);
+	if(ubSens <= MOTION_SENSOR_SENSITIVITY_LEVEL_0)
+	{
+		if(ubSens >= MOTION_SENSOR_SENSITIVITY_LEVEL_NONE)
+		{
+			Ret = SENSITIVITY_LEVEL_0;
+		}
+	}
+	else if(ubSens <= MOTION_SENSOR_SENSITIVITY_LEVEL_1)
+	{
+		Ret = SENSITIVITY_LEVEL_1;
+	}
+	else if(ubSens <= MOTION_SENSOR_SENSITIVITY_LEVEL_2)
+	{
+		Ret = SENSITIVITY_LEVEL_2;
+	}
+	else if(ubSens <= MOTION_SENSOR_SENSITIVITY_LEVEL_3)
+	{
+		Ret = SENSITIVITY_LEVEL_3;
+	}
+	else if(ubSens <= MOTION_SENSOR_SENSITIVITY_LEVEL_4)
+	{
+		Ret = SENSITIVITY_LEVEL_4;
+	}
+	return Ret;
+}

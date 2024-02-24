@@ -56,4 +56,21 @@ HEADER_VARIABLE uint8_t g_ubMotionSensorGrade;
 HEADER_VARIABLE uint8_t	g_ubMotionSensorCountTime;
 HEADER_VARIABLE uint8_t	g_ubMotionSensorDisableTime;
 HEADER_VARIABLE uint8_t g_ubMotionCount;
+HEADER_VARIABLE	uint8_t g_ubMotionSensTemp;
+/***************************************************************************/
+/*					     VARIABLE FOR CONTROL LED						   */
+/***************************************************************************/
+HEADER_VARIABLE	uint8_t g_ubLedControlState;
+HEADER_VARIABLE	uint8_t g_ubLedType;
+HEADER_VARIABLE	uint8_t g_ubLedCountTime;
+HEADER_VARIABLE	uint8_t g_ubLedCountContinuesTime;
+/***************************************************************************/
+/*					     		VARIABLE FOR ALARM						   */
+/***************************************************************************/
+HEADER_VARIABLE uint32_t g_ulMotionTimeOffCount;
+/***************************************************************************/
+/*					     	VARIABLE FOR BLE						   */
+/***************************************************************************/
+HEADER_VARIABLE uint8_t g_ubBatteryLevel;
+HEADER_VARIABLE uint8_t g_ubValueHandle[9];
 #endif

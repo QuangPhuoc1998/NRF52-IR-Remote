@@ -26,6 +26,7 @@ void App_ControlHandle(void)
 				APP_START_LEARN_IR_FLAG = C_OFF;
 				APP_LEARN_IR_COUNT_START_FLAG = C_OFF;
 				NRF_LOG_INFO("Can't decode IR signal! Please try again");
+				lib_ble_noti(NOTI_LEARN_IR_FAIL);
 			}
 		}
 	}
@@ -47,18 +48,17 @@ void App_ControlHandle(void)
 		if(g_ulKeyInValue == KEY_SWITCH_1)
 		{
 			NRF_LOG_INFO("Key switch 1: 3s");
-			NRF_LOG_INFO("=> Erase IR data");
+			NRF_LOG_INFO("=> Erase all data");
 			Mid_FlashErase(IR_DATA_START_ADDRESS, 1);
 			Mid_EraseAllIRCode();
+			Mid_FlashErase(IR_TRIG_START_ADDRESS, 1);
+			Mid_EraseAllITrigger();
 
 		}
 
 		if(g_ulKeyInValue == KEY_SWITCH_2)
 		{
 			NRF_LOG_INFO("Key switch 2: 3s");
-			NRF_LOG_INFO("=> Erase IR Trigger");
-			Mid_FlashErase(IR_TRIG_START_ADDRESS, 1);
-			Mid_EraseAllITrigger();
 		}
 	}
 	KEY_1CLICK_FLAG = C_OFF;
@@ -97,6 +97,7 @@ void App_ControlStartEmitIR(void *pData, uint16_t len)
 		NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[ubIndex].IRData.decodedRawData);
 
 		Mid_IrSendCommon(&t_IRDataCommom[ubIndex].IRData, 1);
+		Mid_LedControlSet(LED_TYPE_SEND_IR);
 	}
 	else
 	{
@@ -119,6 +120,7 @@ void App_ControlStartEmitIRWithID(void *pData, uint16_t len)
 		NRF_LOG_INFO("Raw data = 0x%X", t_IRDataCommom[ubIndex].IRData.decodedRawData);
 
 		Mid_IrSendCommon(&t_IRDataCommom[ubIndex].IRData, 1);
+		Mid_LedControlSet(LED_TYPE_SEND_IR);
 	}
 	else
 	{

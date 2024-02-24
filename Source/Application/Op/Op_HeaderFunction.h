@@ -20,6 +20,20 @@ void App_ControlEraseIR(uint16_t uwIrID);
 /***************************************************************************/
 void App_AlarmInit(void);
 void App_AlarmOnTimeHandler(void);
+void App_AlarmMotionTriggerHandler(void);
+void App_AlarmMotionTimeOutTrigger(void);
+/***************************************************************************/
+/*					   		HEADER FOR MID LED							   */
+/***************************************************************************/
+void Mid_LedControlInit(void);
+void Mid_LedControlSet(uint8_t ubLedType);
+void Mid_LedControlHandle(void);
+/***************************************************************************/
+/*					   		HEADER FOR LIB BLE							   */
+/***************************************************************************/
+void lib_ble_update_bat_level(uint8_t ubBatLevel);
+void lib_ble_noti(uint8_t ubData);
+uint32_t ble_cus_noti(uint16_t conn_handle, uint8_t ubValueHandle, uint8_t ubData);
 /***************************************************************************/
 /*					   	HEADER FOR MID IR REMOTE						   */
 /***************************************************************************/
@@ -258,5 +272,6 @@ uint64_t ConvertStringToTimeStamp(uint8_t * pData, uint8_t len);
 uint8_t is_delim(char c, char *delim);
 char * my_strtok(char *srcString, char *delim);
 uint16_t ConvertArrayToNumber(uint8_t * pData, uint8_t ubLen);
+uint8_t ConvertSensitivityToLevel(uint8_t ubSens);
 
 #endif // _OP_HEADER_FUNCTION_H_

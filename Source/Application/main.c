@@ -9,7 +9,10 @@
 
 #define SCHED_MAX_EVENT_DATA_SIZE   24
 #define SCHED_QUEUE_SIZE            24
+//#define TEST_IR_MODULE
+extern const char * c_ubProtocolName[PROCOTL_LEN];
 
+void InitVarialbe(void);
 void ProcessMain(void);
 void TimerAndScherInit(void);
 void SysTimer10msCall(void * p_context);
@@ -28,7 +31,11 @@ int main(void)
     Mid_RTCInit();
     Mid_FlashInit();
     Mid_KeyControlInit();
+    Mid_LedControlInit();
 
+#ifdef TEST_IR_MODULE
+    Mid_IrRemoteStartScan();
+#endif
     NRF_LOG_INFO("/*--- APP START ---*/");
     for (;;)
     {
@@ -42,6 +49,7 @@ void ProcessMain(void)
 	// App control
 	App_ControlHandle();
 	// Mid IR control
+#ifndef TEST_IR_MODULE
     if(IR_SCAN_DELAY_FLAG == C_OFF)
     {
     	if(Mid_IrRemoteDecode())
@@ -52,6 +60,17 @@ void ProcessMain(void)
 			DETECT_IR_SIGNAL_DONE_FLAG = C_ON;
     	}
     }
+#else
+    if(Mid_IrRemoteDecode())
+	{
+		NRF_LOG_INFO("/*--- Detect IR code ---*/")
+		NRF_LOG_INFO("Protocol = %s", c_ubProtocolName[decodedIRData.protocol]);
+		NRF_LOG_INFO("Address = %d", decodedIRData.address);
+		NRF_LOG_INFO("Command = %d", decodedIRData.command);
+		NRF_LOG_INFO("Number of bit = %d", decodedIRData.numberOfBits);
+    	Ir_RemoteResume();
+	}
+#endif
 
 }
 void SysTimer10msCall(void * p_context)
@@ -66,6 +85,7 @@ void SysTimer10msCall(void * p_context)
 }
 void SysTimer100msCall(void * p_context)
 {
+#ifndef TEST_IR_MODULE
 	if(APP_START_LEARN_IR_FLAG == C_ON && APP_LEARN_IR_COUNT_START_FLAG == C_ON)
 	{
 		g_ubScanIRCount++;
@@ -75,6 +95,10 @@ void SysTimer100msCall(void * p_context)
 			APP_LEARN_IR_COUNT_START_FLAG = C_OFF;
 			APP_LEARN_IR_COUNT_TIMEOUT_FLAG = C_OFF;
 			Mid_IrRemoteStopScan();
+			if(decodedIRData.protocol == UNKNOWN)
+			{
+				lib_ble_noti(NOTI_LEARN_IR_FAIL);
+			}
 		}
 	}
 	//
@@ -96,22 +120,11 @@ void SysTimer100msCall(void * p_context)
 			IR_SCAN_DELAY_FLAG = C_OFF;
 		}
 	}
+#endif
 	//
 	App_AlarmOnTimeHandler();
 	//
-	if(MOTION_SENSOR_START_SENSING == C_ON)
-	{
-		g_ubMotionSensorCountTime++;
-		if(g_ubMotionSensorCountTime >= TIME_2S_BY_100MS)
-		{
-			MOTION_SENSOR_DISABLE = C_ON;
-			MOTION_SENSOR_SENSING_DONE = C_ON;
-			MOTION_SENSOR_START_SENSING = C_OFF;
-			g_ubMotionSensorCountTime = CLEAR;
-			NRF_LOG_INFO("Sensor leve: %d - %d", g_ubMotionSensorGrade, g_ubMotionCount);
-			g_ubMotionSensorGrade = SENSITIVITY_LEVEL_NONE;
-		}
-	}
+	App_AlarmMotionTriggerHandler();
 	//
 	if(MOTION_SENSOR_DISABLE == C_ON)
 	{
@@ -122,10 +135,49 @@ void SysTimer100msCall(void * p_context)
 			g_ubMotionSensorDisableTime = CLEAR;
 		}
 	}
+	//
+	Mid_LedControlHandle();
 }
 void SysTimer1000msCall(void * p_context)
 {
 	app_sched_event_put(NULL, sizeof(NULL), Mid_RTCHandle);
+	//
+	if(MOTION_SENSOR_TIMEOUT_COUNT == C_ON)
+	{
+		g_ulMotionTimeOffCount++;
+	}
+	else
+	{
+		g_ulMotionTimeOffCount = CLEAR;
+	}
+	//
+	if(MOTION_SENSOR_PRE_TIMEOUT_COUNT != MOTION_SENSOR_TIMEOUT_COUNT)
+	{
+		if(MOTION_SENSOR_TIMEOUT_COUNT == C_ON)
+		{
+			for(uint8_t i = 0 ; i < MAX_IR_CODE ; i++)
+			{
+				if(g_atIRDataTrigger[i].ubMode == TIMEOUT_TRIGGER)
+				{
+					g_atIRDataTrigger[i].ubTriggerDone = 0xFF;
+				}
+			}
+		}
+		MOTION_SENSOR_PRE_TIMEOUT_COUNT = MOTION_SENSOR_TIMEOUT_COUNT;
+	}
+	//
+	App_AlarmMotionTimeOutTrigger();
+	//
+//	g_ubBatteryLevel++;
+//	if(BLE_CONNECTED_FLAG == C_ON)
+//	{
+//		lib_ble_noti(NOTI_LEARN_IR_FAIL);
+//	}
+//	if(g_ubBatteryLevel >= 100)
+//	{
+//		g_ubBatteryLevel = 0;
+//	}
+//	lib_ble_update_bat_level(g_ubBatteryLevel);
 }
 
 void TimerAndScherInit(void)
@@ -159,4 +211,8 @@ void IdleStateHandle(void)
     {
         nrf_pwr_mgmt_run();
     }
+}
+void InitVarialbe(void)
+{
+	g_ubMotionSensTemp = 0xFF;
 }

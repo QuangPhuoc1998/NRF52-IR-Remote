@@ -27,7 +27,8 @@ void timer_led_event_handler(nrf_timer_event_t event_type, void* p_context)
     {
         case NRF_TIMER_EVENT_COMPARE0:
         {
-        	uint8_t tIRInputLevel = nrf_gpio_pin_read(PIN_IR_RECEIVE_CUSTOM);
+        	//uint8_t tIRInputLevel = nrf_gpio_pin_read(PIN_IR_RECEIVE_CUSTOM);
+        	uint8_t tIRInputLevel = nrf_gpio_pin_read(PIN_IR_RECEIVE);
 
             /*
              * Increase TickCounter and clip it at maximum 0xFFFF / 3.2 seconds at 50 us ticks
@@ -151,12 +152,13 @@ void Mid_IrRemoteInit(void)
 
 	nrf_drv_timer_extended_compare(&TIMER_LED, NRF_TIMER_CC_CHANNEL0, time_ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
 
-	nrf_gpio_cfg_input(PIN_IR_RECEIVE_CUSTOM, NRF_GPIO_PIN_NOPULL);
+	//nrf_gpio_cfg_input(PIN_IR_RECEIVE_CUSTOM, NRF_GPIO_PIN_NOPULL);
 
 	nrf_gpio_cfg_output(PIN_IR_TRANSMIT);
 	nrf_gpio_pin_clear(PIN_IR_TRANSMIT);
-//	nrf_gpio_cfg_output(PIN_IR_RECEIVER_POWER_CONTROL);
-//	nrf_gpio_pin_set(PIN_IR_RECEIVER_POWER_CONTROL);
+	nrf_gpio_cfg_input(PIN_IR_RECEIVE, NRF_GPIO_PIN_NOPULL);
+	nrf_gpio_cfg_output(PIN_IR_RECEIVER_POWER_CONTROL);
+	nrf_gpio_pin_clear(PIN_IR_RECEIVER_POWER_CONTROL);
 
 
 	Ir_RemoteResume();

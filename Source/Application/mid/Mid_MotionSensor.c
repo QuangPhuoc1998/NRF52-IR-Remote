@@ -1,7 +1,7 @@
 #include "Mid_MotionSensor.h"
 
 #define SAADC_CHANNEL_COUNT   1
-#define SAADC_SAMPLE_INTERVAL_MS 100
+#define SAADC_SAMPLE_INTERVAL_MS 50
 
 static volatile bool HandlerIsReady = true;
 static volatile bool MotionIsDetect = false;
@@ -48,6 +48,7 @@ static void Mid_MotionSensorHandler(nrfx_saadc_evt_t const * p_event)
     {
     	if(p_event->data.done.p_buffer[0] < 100 && MOTION_SENSOR_DISABLE == C_OFF)
     	{
+    		MOTION_SENSOR_TIMEOUT_COUNT = C_OFF;
     		if(MOTION_SENSOR_START_SENSING == C_OFF)
     		{
     			MOTION_SENSOR_START_SENSING = C_ON;
@@ -76,12 +77,13 @@ static void Mid_MotionSensorHandler(nrfx_saadc_evt_t const * p_event)
 			{
     			g_ubMotionSensorGrade = SENSITIVITY_LEVEL_4;
 			}
-    		NRF_LOG_INFO("ADC = %d", p_event->data.done.p_buffer[0]);
+//    		NRF_LOG_INFO("ADC = %d", p_event->data.done.p_buffer[0]);
     	}
     	else if(MOTION_SENSOR_START_SENSING == C_OFF)
     	{
     		g_ubMotionCount = 0;
     		MotionIsDetect = false;
+    		MOTION_SENSOR_TIMEOUT_COUNT = C_ON;
     	}
         HandlerIsReady = true;
     }

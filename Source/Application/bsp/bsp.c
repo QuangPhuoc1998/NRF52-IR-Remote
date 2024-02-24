@@ -37,14 +37,14 @@ void bsp_init(void)
 	NRF_POWER->DCDCEN = 1;
 
 	// Configure the GPIOs that we will use for various functions, like controlling the LEDs
-	NRF_P0->OUTSET = (1 << PIN_RED_LED);     // set high to turn off the LED
-	NRF_P0->PIN_CNF[PIN_RED_LED] = 0x3;      // make this GPIO an output
-
-	NRF_P0->OUTSET = (1 << PIN_GREEN_LED);   // set high to turn off the LED
-	NRF_P0->PIN_CNF[PIN_GREEN_LED] = 0x3;    // make this GPIO an output
-
-	NRF_P0->OUTSET = (1 << PIN_BLUE_LED);     // set high to turn off the LED
-	NRF_P0->PIN_CNF[PIN_BLUE_LED] = 0x3;      // make this GPIO an output
+//	NRF_P0->OUTSET = (1 << PIN_RED_LED);     // set high to turn off the LED
+//	NRF_P0->PIN_CNF[PIN_RED_LED] = 0x3;      // make this GPIO an output
+//
+//	NRF_P0->OUTSET = (1 << PIN_GREEN_LED);   // set high to turn off the LED
+//	NRF_P0->PIN_CNF[PIN_GREEN_LED] = 0x3;    // make this GPIO an output
+//
+//	NRF_P0->OUTSET = (1 << PIN_BLUE_LED);     // set high to turn off the LED
+//	NRF_P0->PIN_CNF[PIN_BLUE_LED] = 0x3;      // make this GPIO an output
 
 //	NRF_P0->OUTSET = (1 << PIN_IR_RECEIVER_POWER_CONTROL);  // set high to turn off the IR receiver
 //	NRF_P0->PIN_CNF[PIN_IR_RECEIVER_POWER_CONTROL] = 0x3;   // make this GPIO an output

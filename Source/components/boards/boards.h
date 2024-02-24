@@ -43,6 +43,8 @@
 #include "nrf_gpio.h"
 #include "nordic_common.h"
 
+#define BOARD_PCA10040
+
 #if defined(BOARD_NRF6310)
   #include "nrf6310.h"
 #elif defined(BOARD_PCA10000)

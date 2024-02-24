@@ -1,4 +1,5 @@
 
+#include "main.h"
 #include <stdint.h>
 #include <string.h>
 #include "nordic_common.h"
@@ -291,6 +292,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     {
         case BLE_GAP_EVT_CONNECTED:
             NRF_LOG_INFO("Connected");
+            Mid_LedControlSet(LED_TYPE_BLE_CONNECT);
+            BLE_CONNECTED_FLAG = C_ON;
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
             APP_ERROR_CHECK(err_code);
@@ -298,6 +301,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
         case BLE_GAP_EVT_DISCONNECTED:
             NRF_LOG_INFO("Disconnected");
+            Mid_LedControlSet(LED_TYPE_BLE_DISCONNECT);
+            BLE_CONNECTED_FLAG = C_OFF;
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
             advertising_start();
             break;
@@ -436,3 +441,12 @@ uint16_t lib_ble_get_handler(void)
 /**
  * @}
  */
+
+void lib_ble_update_bat_level(uint8_t ubBatLevel)
+{
+	ble_bas_battery_level_update(&m_bas, ubBatLevel, BLE_CONN_HANDLE_INVALID);
+}
+void lib_ble_noti(uint8_t ubData)
+{
+	ble_cus_noti(m_conn_handle, g_ubValueHandle[CUS_UUID_FEED_BACK_INDEX], ubData);
+}

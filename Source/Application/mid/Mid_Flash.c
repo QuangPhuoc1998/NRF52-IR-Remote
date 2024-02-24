@@ -1,6 +1,6 @@
 #include "main.h"
 
-//#define FLASH_SHOW_DEBUG
+#define FLASH_SHOW_DEBUG
 
 void print_flash_info(nrf_fstorage_t * p_fstorage);
 static void fstorage_evt_handler(nrf_fstorage_evt_t * p_evt);
@@ -58,9 +58,9 @@ void Mid_FlashInit(void)
 										g_atIRDataTrigger[i].ubMode,
 										g_atIRDataTrigger[i].uwIrCode,
 										g_atIRDataTrigger[i].ubDays);
-		NRF_LOG_INFO("%d:%d - %d:%d - %d", g_atIRDataTrigger[i].tTime1.ubHour, g_atIRDataTrigger[i].tTime1.ubMin,
+		NRF_LOG_INFO("%d:%d - %d:%d - %d - %d", g_atIRDataTrigger[i].tTime1.ubHour, g_atIRDataTrigger[i].tTime1.ubMin,
 											g_atIRDataTrigger[i].tTime2.ubHour, g_atIRDataTrigger[i].tTime2.ubMin,
-											g_atIRDataTrigger[i].ulTimeout);
+											g_atIRDataTrigger[i].ulTimeout, g_atIRDataTrigger[i].ubMotionSen);
 	}
 #endif //FLASH_SHOW_DEBUG
 }

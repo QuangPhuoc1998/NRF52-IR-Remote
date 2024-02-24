@@ -28,7 +28,14 @@ typedef union
   uint8_t   byte;
   USER_BYTE_FIELD   byte_bit;
 } USER_TBYTE;
-
+/***************************************************************************/
+/*					   			FLAG FOR BLE							   */
+/***************************************************************************/
+HEADER_FLAG volatile USER_TBYTE	g_FubBLE1;
+#define BLE_CONNECTED_FLAG						g_FubBLE1.byte_bit.b0
+/***************************************************************************/
+/*					   			FLAG FOR IR							  	   */
+/***************************************************************************/
 HEADER_FLAG volatile USER_TBYTE	g_FubOperation1;
 #define APP_START_LEARN_IR_FLAG					g_FubOperation1.byte_bit.b0
 #define APP_LEARN_IR_COUNT_START_FLAG			g_FubOperation1.byte_bit.b1
@@ -63,4 +70,13 @@ HEADER_FLAG USER_TBYTE MotionSensorFlag1;
 #define MOTION_SENSOR_START_SENSING            	MotionSensorFlag1.byte_bit.b0
 #define MOTION_SENSOR_SENSING_DONE				MotionSensorFlag1.byte_bit.b1
 #define MOTION_SENSOR_DISABLE					MotionSensorFlag1.byte_bit.b2
+#define MOTION_SENSOR_TIMEOUT_COUNT				MotionSensorFlag1.byte_bit.b3
+#define MOTION_SENSOR_PRE_TIMEOUT_COUNT			MotionSensorFlag1.byte_bit.b4
+/***************************************************************************/
+/*					   	FLAG FOR CONTROL LED							   */
+/***************************************************************************/
+HEADER_FLAG USER_TBYTE LedFlag1;
+#define LED_START_CONTROL_FLAG            LedFlag1.byte_bit.b0
+#define LED_START_ON_FLAG                 LedFlag1.byte_bit.b1
+#define LED_START_OFF_FLAG                LedFlag1.byte_bit.b2
 #endif // _OP_HEADER_FLAG_H_
