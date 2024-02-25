@@ -232,9 +232,9 @@ INC_FOLDERS += \
   $(PROJ_DIR)/Source/components/libraries/stack_guard \
   $(PROJ_DIR)/Source/components/libraries/log/src \
   $(PROJ_DIR)/Source/Application \
-  $(PROJ_DIR)/Source/Application\bsp		 \
-  $(PROJ_DIR)/Source/Application\mid		 \
-  $(PROJ_DIR)/Source/Application\Op		 \
+  $(PROJ_DIR)/Source/Application/bsp		 \
+  $(PROJ_DIR)/Source/Application/mid		 \
+  $(PROJ_DIR)/Source/Application/Op		 \
   $(PROJ_DIR)/Source/modules/nrfx/drivers/src	\
   $(PROJ_DIR)/Source/Application/App/			\
   $(PROJ_DIR)/Source/Application/Sys/			\
