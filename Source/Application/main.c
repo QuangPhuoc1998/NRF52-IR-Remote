@@ -9,7 +9,7 @@
 
 #define SCHED_MAX_EVENT_DATA_SIZE   24
 #define SCHED_QUEUE_SIZE            24
-//#define TEST_IR_MODULE
+#define TEST_IR_MODULE
 extern const char * c_ubProtocolName[PROCOTL_LEN];
 
 void InitVarialbe(void);
